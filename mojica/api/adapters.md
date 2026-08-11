@@ -199,29 +199,7 @@ HTTPクライアントを差し替え、Adapterから観測できる変換結果
 
 Glyph Forge APIの実通信を行うテストでは、秘密情報をリポジトリへ保存せず、テスト間で認証状態やポートを共有しない。
 
-## 15. 外部API契約の確認事項
-
-### 既存の設計書から確定している契約
-
-| 項目 | 決定内容 | 根拠 |
-| --- | --- | --- |
-| 画像種別 | `standard`、`x-background`、`x-icon` | `models.md`、`mvp-api.md` |
-| エンドポイント | `POST /images`、`POST /images/background`、`POST /images/x-icon` | `mvp-api.md` |
-| 入力値 | 描画文字列、前景・背景文字、前景・背景色 | `models.md`、`mvp-api.md` |
-| 色の変換 | HEXをRGBへ変換して外部APIへ送信 | `models.md`、`mvp-api.md` |
-| 成功結果 | PNG画像を取得し、`GeneratedImage` へ変換 | `mvp-api.md`、`ports.md` |
-| レート制限 | 外部APIの429を `RATE_LIMITED` へ変換 | `mvp-api.md`、`ports.md` |
-| タイムアウト | 外部APIのタイムアウトを `TIMEOUT` へ変換 | `mvp-api.md`、`ports.md` |
-| その他の失敗 | 通信失敗・不正応答・生成失敗をPortエラーへ変換 | `ports.md` |
-
-### Adapter契約として確定する境界
-
-- 外部APIのURL、HTTPクライアント、JSON DTOはAdapter内部に閉じ込める
-- Adapterは検証済みの `ImageGenerationRequest` だけを受け取る
-- Adapterは外部APIの結果を `GeneratedImage` または `ImageGenerationPortError` へ変換する
-- 外部APIのエラー本文、例外、スタックトレース、内部URL、認証情報を上位層へ漏出させない
-
-### 外部API仕様として未確定の項目
+## 15. 外部API仕様の未確定事項
 
 Glyph Forge APIの仕様書が既存リポジトリにないため、次の項目は外部API提供者の契約確認後に固定する。
 
