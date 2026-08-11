@@ -261,13 +261,6 @@ Glyph Forge APIの画像生成処理の上限は30秒である。AdapterのHTTP�
 
 HTTPクライアント自身のタイムアウトは `TIMEOUT` に変換する。タイムアウト、通信失敗、`503` のいずれの場合も、Adapterは自動再試行しない。画像生成APIに冪等性キーの契約がないため、再試行による重複生成を避ける。
 
-### 参照
-
-- [Glyph Forge README](https://github.com/kishimin/glyph-forge/blob/main/README.md)
-- [Glyph Forge API schema](https://github.com/kishimin/glyph-forge/blob/main/app/schemas.py)
-- [Glyph Forge API implementation](https://github.com/kishimin/glyph-forge/blob/main/app/main.py)
-- [Glyph Forge request limits](https://github.com/kishimin/glyph-forge/blob/main/app/request_limits.py)
-
 ## 16. 決定事項
 
 - AdapterはInfrastructure層に配置する
