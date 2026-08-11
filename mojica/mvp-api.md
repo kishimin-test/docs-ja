@@ -1,8 +1,6 @@
-日本語・英語の切り替えまで含めた最新版です。
-
 # mojica MVP API設計書
 
-## 概要
+## 1. 概要
 
 mojicaのバックエンドはASP.NET Coreで実装する。
 
@@ -10,13 +8,13 @@ mojicaのバックエンドはASP.NET Coreで実装する。
 
 フロントエンドから呼び出す画像生成APIは1つとし、画像の種類に応じたGlyph Forge APIのエンドポイントの振り分けはバックエンドが担当する。
 
-フロントエンドではカラーピッカーを使用し、色をHEX形式で扱う。mojica APIもHEX形式で色を受け取り、ASP.NET Core側でRGB形式へ変換してGlyph Forge APIへ送信する。
+HEX形式で色を受け取り、RGB形式へ変換してGlyph Forge APIへ送信する。
 
 mojica APIはi18n（国際化）に対応し、クライアントへ返却するエラーメッセージを日本語・英語で切り替えられる構成とする。
 
 ---
 
-# システム構成
+# 2. システム構成
 
 ```text
 Frontend
@@ -29,8 +27,8 @@ ASP.NET Core API
     │
     ├── 言語判定
     ├── リクエストバリデーション
-    ├── HEX → RGB変換
     ├── レート制限
+    ├── HEX → RGB変換
     └── typeによる振り分け
             │
             ▼
@@ -51,7 +49,7 @@ ASP.NET Core API
 
 ---
 
-# API一覧
+# 3. API一覧
 
 | メソッド | エンドポイント | 概要                     |
 | -------- | -------------- | ------------------------ |
@@ -59,7 +57,7 @@ ASP.NET Core API
 
 ---
 
-# 画像生成API
+# 4. 画像生成API
 
 ## エンドポイント
 
@@ -77,7 +75,7 @@ POST /images
 
 ---
 
-# リクエスト
+# 5. リクエスト
 
 ## Headers
 
@@ -113,14 +111,14 @@ Accept-Language: en
 
 ## Body
 
-| 項目                | 型     | 必須 | 説明                    |
-| ------------------- | ------ | :--: | ----------------------- |
-| type                | enum   |  ○   | 出力する画像の種類      |
-| text                | string |  ○   | 描画する文字列          |
-| foregroundCharacter | string |  ○   | 描画に使用する文字      |
-| foregroundColor     | string |  ○   | 描画文字色（HEX）       |
-| backgroundCharacter | string |  ○   | 敷き詰める文字          |
-| backgroundColor     | string |  ○   | 敷き詰める文字色（HEX） |
+| 項目                  | 型     | 必須 | 説明                    |
+| --------------------- | ------ | :--: | ----------------------- |
+| `type`                | enum   |  ○   | 出力する画像の種類      |
+| `text`                | string |  ○   | 描画する文字列          |
+| `foregroundCharacter` | string |  ○   | 描画に使用する文字      |
+| `foregroundColor`     | string |  ○   | 描画文字色（HEX）       |
+| `backgroundCharacter` | string |  ○   | 敷き詰める文字          |
+| `backgroundColor`     | string |  ○   | 敷き詰める文字色（HEX） |
 
 ## type
 
@@ -151,7 +149,119 @@ Accept-Language: ja
 
 ---
 
-# Glyph Forge APIとの連携
+# 6. リクエストバリデーション
+
+mojica APIは、Glyph Forge APIを呼び出す前にすべての画像生成リクエストを検証する。
+
+フロントエンドでバリデーション済みの場合でも、バックエンド側で必ずバリデーションを行う。
+
+バリデーションに失敗した場合、Glyph Forge APIは呼び出さず `422 Unprocessable Entity` を返却する。
+
+## `text`
+
+描画する文字列。
+
+制約：
+
+- 必須
+- 1文字以上
+- 64文字以下
+- 空白文字のみは禁止
+- 制御文字は禁止
+
+---
+
+## `foregroundCharacter`
+
+描画に使用する文字。
+
+制約：
+
+- 必須
+- 1文字以上
+- 128文字以下
+- 制御文字は禁止
+- 空白文字のみは許可する
+
+---
+
+## `foregroundColor`
+
+描画に使用する文字の色。
+
+制約：
+
+- 必須
+- `#RRGGBB` 形式の有効なHEXカラーであること
+
+例：
+
+```text
+#FFD400
+```
+
+バリデーション成功後、ASP.NET CoreでHEXからRGBへ変換してGlyph Forge APIへ送信する。
+
+---
+
+## `backgroundCharacter`
+
+描画文字の周囲に敷き詰める文字。
+
+制約：
+
+- 必須
+- 1文字以上
+- 128文字以下
+- 制御文字は禁止
+- 空白文字のみは許可する
+
+---
+
+## `backgroundColor`
+
+敷き詰める文字の色。
+
+制約：
+
+- 必須
+- `#RRGGBB` 形式の有効なHEXカラーであること
+
+例：
+
+```text
+#FF69B4
+```
+
+バリデーション成功後、ASP.NET CoreでHEXからRGBへ変換してGlyph Forge APIへ送信する。
+
+---
+
+## `type`
+
+生成する画像の種類。
+
+制約：
+
+- 必須
+- 以下のいずれかであること
+  - `standard`
+  - `x-background`
+  - `x-icon`
+
+---
+
+## 文字の組み合わせ
+
+`foregroundCharacter` と `backgroundCharacter` は、それぞれ単独では空白文字のみを指定できる。
+
+ただし、両方を空白文字のみにすることは禁止する。
+
+少なくともどちらか一方には表示可能な文字を含める必要がある。
+
+---
+
+# 7. Glyph Forge APIとの連携
 
 ## エンドポイント振り分け
 
@@ -167,7 +277,7 @@ ASP.NET Coreは `type` の値に応じて、呼び出すGlyph Forge APIのエン
 
 ---
 
-# 色情報の変換
+# 8. 色情報の変換
 
 フロントエンドではカラーピッカーを使用し、色をHEX形式で取得する。
 
@@ -195,7 +305,7 @@ B: 180
 
 ---
 
-# i18n（国際化）
+# 9. i18n（国際化）
 
 mojica APIは、クライアントへ返却するエラーメッセージの多言語化に対応する。
 
@@ -266,7 +376,7 @@ Accept-Language: en
 
 ---
 
-# レスポンス
+# 10. 正常レスポンス
 
 ## 200 OK
 
@@ -284,7 +394,7 @@ ASP.NET CoreはGlyph Forge APIから取得したPNG画像をクライアント�
 
 ---
 
-# エラーレスポンス
+# 11. エラーレスポンス
 
 エラーレスポンスはJSON形式で返却する。
 
@@ -333,7 +443,12 @@ HTTPリクエストとして正しく解釈できない場合に返却する。
 - 必須項目が未入力
 - `type` に定義されていない値が指定されている
 - カラーがHEX形式ではない
-- 文字列が許容される条件を満たしていない
+- 文字数の上限を超えている
+- 制御文字が含まれている
+- `text` が空白文字のみ
+- `foregroundCharacter` と `backgroundCharacter` の両方が空白文字のみ
+
+可能な限り、検出したすべてのバリデーションエラーを `errors` 配列に格納する。
 
 ### 必須項目エラー
 
@@ -362,6 +477,38 @@ HTTPリクエストとして正しく解釈できない場合に返却する。
     {
       "field": "text",
       "message": "The text field is required."
+    }
+  ]
+}
+```
+
+### 文字数エラー
+
+日本語：
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "入力内容に誤りがあります。",
+  "errors": [
+    {
+      "field": "text",
+      "message": "描画する文字列は64文字以内で入力してください。"
+    }
+  ]
+}
+```
+
+英語：
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "The input contains validation errors.",
+  "errors": [
+    {
+      "field": "text",
+      "message": "The text must be 64 characters or fewer."
     }
   ]
 }
@@ -431,7 +578,47 @@ HTTPリクエストとして正しく解釈できない場合に返却する。
 }
 ```
 
-複数項目に問題がある場合は、`errors` にすべてのバリデーションエラーを格納する。
+### 文字の組み合わせエラー
+
+`foregroundCharacter` と `backgroundCharacter` の両方が空白文字のみの場合は、それぞれのフィールドにエラーを設定する。
+
+日本語：
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "入力内容に誤りがあります。",
+  "errors": [
+    {
+      "field": "foregroundCharacter",
+      "message": "描画に使う文字または敷き詰める文字のどちらかに、表示可能な文字を入力してください。"
+    },
+    {
+      "field": "backgroundCharacter",
+      "message": "描画に使う文字または敷き詰める文字のどちらかに、表示可能な文字を入力してください。"
+    }
+  ]
+}
+```
+
+英語：
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "The input contains validation errors.",
+  "errors": [
+    {
+      "field": "foregroundCharacter",
+      "message": "Either the foreground or background characters must contain at least one visible character."
+    },
+    {
+      "field": "backgroundCharacter",
+      "message": "Either the foreground or background characters must contain at least one visible character."
+    }
+  ]
+}
+```
 
 ---
 
@@ -444,7 +631,7 @@ HTTPリクエストとして正しく解釈できない場合に返却する。
 
 画像生成は比較的負荷の高い処理であるため、mojica API側でもレート制限を設け、過剰な画像生成リクエストからmojica APIおよびGlyph Forge APIを保護する。
 
-mojica API自身のレート制限を超過した場合は、Glyph Forge APIを呼び出さずに `429 Too Many Requests` を返却する。
+mojica API自身のレート制限を超過した場合は、Glyph Forge APIを呼び出さず `429 Too Many Requests` を返却する。
 
 Glyph Forge APIから `429 Too Many Requests` が返却された場合も、mojica APIはクライアントへ `429 Too Many Requests` を返却する。
 
@@ -562,7 +749,7 @@ Glyph Forge APIから一定時間以内にレスポンスを取得できなか�
 
 ---
 
-# HTTPステータスコード一覧
+# 12. HTTPステータスコード一覧
 
 | ステータス                  | 用途                                              |
 | --------------------------- | ------------------------------------------------- |
@@ -576,7 +763,7 @@ Glyph Forge APIから一定時間以内にレスポンスを取得できなか�
 
 ---
 
-# レート制限
+# 13. レート制限
 
 画像生成処理への過剰なリクエストを防止するため、ASP.NET Core側でレート制限を行う。
 
@@ -599,12 +786,33 @@ mojica API側のレート制限は、原則としてGlyph Forge API側のレー�
 
 ---
 
-# MVPにおけるバックエンドの責務
+# 14. リクエスト処理フロー
+
+画像生成リクエストは以下の順序で処理する。
+
+1. HTTPリクエストを解析する
+2. `Accept-Language` から言語を判定する
+3. リクエスト項目をバリデーションする
+4. バリデーションエラーがある場合は `422 Unprocessable Entity` を返却する
+5. mojica APIのレート制限を確認する
+6. HEXカラーをRGBへ変換する
+7. `type` に応じてGlyph Forge APIのエンドポイントを決定する
+8. Glyph Forge APIへリクエストする
+9. Glyph Forge APIのレスポンスを処理する
+10. 生成されたPNG画像をクライアントへ返却する
+
+mojica APIのバリデーションまたはレート制限によりリクエストを拒否する場合、Glyph Forge APIは呼び出さない。
+
+---
+
+# 15. MVPにおけるバックエンドの責務
 
 ASP.NET Coreバックエンドは以下を担当する。
 
 - フロントエンドからの画像生成リクエスト受付
+- HTTPリクエストの解析
 - リクエストのバリデーション
+- Glyph Forge APIの入力制約と整合したバリデーション
 - `Accept-Language` に基づく日本語・英語の言語判定
 - 日本語・英語のエラーメッセージのローカライズ
 - `Accept-Language` が未指定の場合の日本語へのフォールバック
