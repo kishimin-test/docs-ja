@@ -1,106 +1,108 @@
-# mojica API Model Design
+# mojica API Model設計書
 
-## 1. Purpose
+## 1. 目的
 
-This document defines the values and invariants required for image generation as Domain Models.
+画像生成に必要な値と不変条件をDomain Modelとして定義する。
 
-HTTP request/response DTOs and communication models for external services are not included in the Model.
+この文書でいうModelは、画像生成に必要な値と不変条件を表すDomain Modelである。HTTPリクエスト/レスポンス用DTOやGlyph Forge APIの通信モデルはModelに含めない。
 
-## 2. Model Responsibilities
+## 2. Modelの責務
 
-The Model is responsible for:
+Modelは以下を担当する。
 
-- Representing values required for image generation
-- Validating value formats and ranges
-- Representing image types
-- Representing and converting HEX and RGB color values
-- Maintaining invariants for the complete image generation request
-- Representing validation results produced by the Domain
+- 画像生成に必要な値の表現
+- 値の形式・範囲の検証
+- 画像種類の表現
+- HEXカラーとRGBカラーの値表現および変換
+- 画像生成リクエスト全体の不変条件の維持
+- Domainで発生した検証結果の表現
 
-## 3. Domain Model List
+## 3. Domain Model一覧
 
-| Model | Kind | Role |
+| Model | 種類 | 役割 |
 | --- | --- | --- |
-| `ImageGenerationRequest` | Aggregate / Domain Model | Groups the values required for image generation and maintains their invariants |
-| `ImageType` | Enum / Value | Represents the type of image to generate |
-| `RenderText` | Value Object | Represents the text to render |
-| `PatternCharacter` | Value Object | Represents the string used for the foreground or background pattern |
-| `HexColor` | Value Object | Represents a color in `#RRGGBB` format |
-| `RgbColor` | Value Object | Represents a color in RGB format |
-| `GeneratedImage` | Domain Result | Represents generated image data |
-| `ModelValidationError` | Domain Error | Represents a Model validation failure |
+| `ImageGenerationRequest` | Aggregate / Domain Model | 画像生成に必要な値をまとめ、不変条件を維持する |
+| `ImageType` | Enum / Value | 生成する画像の種類を表す |
+| `RenderText` | Value Object | 描画対象の文字列を表す |
+| `PatternCharacter` | Value Object | 描画または背景に使用する文字列を表す |
+| `HexColor` | Value Object | `#RRGGBB` 形式の色を表す |
+| `RgbColor` | Value Object | RGB形式の色を表す |
+| `GeneratedImage` | Domain Result | 生成された画像データを表す |
+| `ModelValidationError` | Domain Error | Modelの検証失敗を表す |
 
 ## 4. ImageType
 
-The type of image to generate is represented by a predefined value rather than an arbitrary string.
+生成する画像の種類を、自由な文字列ではなく定義済みの値として表現する。
 
-| Value | Description |
+| 値 | 説明 |
 | --- | --- |
-| `standard` | Standard image |
-| `x-background` | X background image |
-| `x-icon` | X icon image |
+| `standard` | 標準画像 |
+| `x-background` | X背景画像 |
+| `x-icon` | Xアイコン画像 |
 
-`ImageType` represents only an image-type value and does not contain information about an external system.
+`ImageType` は画像種別の値だけを表現し、外部システムの情報を保持しない。
 
-Undefined values cannot be created as an `ImageType`.
+未定義の値は `ImageType` として生成できない。
 
 ## 5. RenderText
 
-`RenderText` represents the text to be rendered as character art.
+`RenderText` は、文字アートとして描画する対象の文字列を表す。
 
-### Constraints
+### 制約
 
-- Required
-- At least 1 character
-- At most 64 characters
-- Must not consist only of whitespace
-- Must not contain control characters
+- 必須
+- 1文字以上
+- 64文字以下
+- 空白文字のみは禁止
+- 制御文字は禁止
 
-### Creation Rules
+### 生成規則
 
-Values that do not satisfy the constraints are rejected at creation time. A created value always satisfies the constraints.
+生成時に制約を満たさない値を拒否する。生成後の値は常に制約を満たす。
 
-Character counts use Unicode grapheme clusters. Emoji and combining characters are treated as one character as perceived by the user. A character represented by a surrogate pair must not be counted as two characters.
+文字数はUnicodeの書記素クラスタ単位で数える。絵文字や結合文字を、ユーザーが認識する1文字として扱う。サロゲートペアを構成する文字を2文字として扱わない。
 
 ## 6. PatternCharacter
 
-`PatternCharacter` represents the string that forms the foreground or background pattern.
+`PatternCharacter` は、描画または背景のパターンを構成する文字列を表す。
 
-Character counting follows the same Unicode grapheme-cluster rule as `RenderText`.
+文字数の数え方は `RenderText` と同じく、Unicodeの書記素クラスタ単位とする。
 
-| Use | Domain meaning |
+用途によって次の2種類を区別する。
+
+| 用途 | Domain上の意味 |
 | --- | --- |
-| `foregroundCharacter` | Character used for rendering |
-| `backgroundCharacter` | Character tiled around the rendered characters |
+| `foregroundCharacter` | 描画に使用する文字 |
+| `backgroundCharacter` | 描画文字の周囲に敷き詰める文字 |
 
-### Common Constraints
+### 共通制約
 
-- Required
-- At least 1 character
-- At most 128 characters
-- Must not contain control characters
-- A value consisting only of whitespace is allowed by itself
+- 必須
+- 1文字以上
+- 128文字以下
+- 制御文字は禁止
+- 空白文字のみは単独では許可する
 
-### Cross-Field Invariant
+### 相互不変条件
 
-Both `foregroundCharacter` and `backgroundCharacter` must not consist only of whitespace.
+`foregroundCharacter` と `backgroundCharacter` の両方が空白文字のみになることは禁止する。
 
-At least one of them must contain at least one visible character. This cross-field constraint is validated by `ImageGenerationRequest`.
+どちらか一方には、少なくとも1つの表示可能な文字を含める必要がある。これは個々の `PatternCharacter` ではなく、`ImageGenerationRequest` が検証する相互制約である。
 
 ## 7. HexColor
 
-`HexColor` is a Value Object that represents a normalized HEX color.
+`HexColor` は、HEXカラーを正規化して表すValue Objectである。
 
-### Constraints
+### 制約
 
-- Required
-- Must use the `#RRGGBB` format
-- The six digits after `#` must be hexadecimal digits
-- Each RGB component must be in the range `0` through `255`
+- 必須
+- `#RRGGBB` 形式である
+- `#` に続く6桁が16進数である
+- RGB各値が `0` から `255` の範囲に収まる
 
-### Normalization
+### 正規化
 
-The internal value is case-insensitive. String representation uses one normalized form.
+内部値は大文字・小文字に依存しない。外部へ文字列化する場合の表記は、正規化された一つの形式に統一する。
 
 ```text
 #ff69b4
@@ -108,9 +110,9 @@ The internal value is case-insensitive. String representation uses one normalize
 #FF69B4
 ```
 
-### Conversion to RGB
+### RGBへの変換
 
-`HexColor` can calculate RGB values.
+`HexColor` はRGB値を計算できる。
 
 ```text
 #FF69B4
@@ -122,93 +124,101 @@ B: 180
 
 ## 8. RgbColor
 
-`RgbColor` stores red, green, and blue components as values.
+`RgbColor` は赤・緑・青の各成分を値として保持する。
 
-| Value | Type | Constraint |
+| 値 | 型 | 制約 |
 | --- | --- | --- |
-| `red` | Integer | 0 through 255 |
-| `green` | Integer | 0 through 255 |
-| `blue` | Integer | 0 through 255 |
+| `red` | 整数 | 0以上255以下 |
+| `green` | 整数 | 0以上255以下 |
+| `blue` | 整数 | 0以上255以下 |
 
-Each component is validated at creation time. Negative values, values greater than 255, fractional values, and unset values cannot be created.
+`RgbColor` は、生成時に各成分の範囲を検証する。負数、255超過、小数、未設定値は生成できない。
 
 ## 9. ImageGenerationRequest
 
-`ImageGenerationRequest` is a validated Domain Model for the image generation use case.
+`ImageGenerationRequest` は、画像生成ユースケースに渡す検証済みのDomain Modelである。
 
-### Attributes
+### 属性
 
-| Attribute | Type | Required |
+| 属性 | 型 | 必須 |
 | --- | --- | :---: |
-| `type` | `ImageType` | Yes |
-| `text` | `RenderText` | Yes |
-| `foregroundCharacter` | `PatternCharacter` | Yes |
-| `foregroundColor` | `HexColor` | Yes |
-| `backgroundCharacter` | `PatternCharacter` | Yes |
-| `backgroundColor` | `HexColor` | Yes |
+| `type` | `ImageType` | ○ |
+| `text` | `RenderText` | ○ |
+| `foregroundCharacter` | `PatternCharacter` | ○ |
+| `foregroundColor` | `HexColor` | ○ |
+| `backgroundCharacter` | `PatternCharacter` | ○ |
+| `backgroundColor` | `HexColor` | ○ |
 
-### Invariants
+### 不変条件
 
-- All attributes are present
-- All Value Object constraints are satisfied
-- `foregroundCharacter` and `backgroundCharacter` do not both consist only of whitespace
+- すべての属性が存在する
+- 各Value Objectの制約を満たす
+- `foregroundCharacter` と `backgroundCharacter` の両方が空白文字のみではない
 
-### Creation
+### 生成
 
-Create each Value Object before creating the `ImageGenerationRequest`. If creation fails, the `ImageGenerationRequest` is not created.
+外部入力を直接 `ImageGenerationRequest` として扱わない。各Value Objectを生成した後に `ImageGenerationRequest` を生成する。
+
+生成に失敗した場合、`ImageGenerationRequest` を生成しない。
 
 ## 10. GeneratedImage
 
-`GeneratedImage` is a Domain Result representing a successful image generation result.
+`GeneratedImage` は、画像生成に成功した結果を表すDomain Resultである。
 
-| Attribute | Description |
+### 属性
+
+| 属性 | 内容 |
 | --- | --- |
-| `content` | Binary image data |
-| `mediaType` | Image media type |
-| `fileName` | Filename used for downloading |
+| `content` | 画像のバイナリデータ |
+| `mediaType` | 画像のメディア形式 |
+| `fileName` | ダウンロード時に使用するファイル名 |
 
 ## 11. ModelValidationError
 
-When Model creation or invariant validation fails, a Domain error is returned so callers can classify the failure.
+Modelの生成または不変条件の検証に失敗した場合は、利用側がエラーを分類できるDomainエラーを返す。
 
-| Attribute | Description |
+### 属性
+
+| 属性 | 内容 |
 | --- | --- |
-| `code` | Language-independent error code |
-| `target` | Domain attribute or combination of attributes with the problem |
-| `reason` | Machine-detectable failure reason represented as `ModelValidationReason` |
-| `details` | Safe supplementary information, when necessary |
+| `code` | 言語に依存しないエラーコード |
+| `target` | 問題のあるDomain属性または属性の組み合わせ |
+| `reason` | `ModelValidationReason` として表現する機械的に判定できる失敗理由 |
+| `details` | 必要に応じた安全な補足情報 |
 
-`ModelValidationError` does not contain display messages. `reason` is represented by the closed type `ModelValidationReason`.
+`ModelValidationError` は表示メッセージを持たない。`reason` は閉じた型である `ModelValidationReason` として表現する。
 
-Expected validation failures are handled as a `Result<T, ModelValidationError>`-equivalent return value, not as exceptions. Unexpected runtime failures are outside the Model's responsibility.
+想定内の検証失敗は例外ではなく、`Result<T, ModelValidationError>` 相当の戻り値で扱う。予期しない実行時障害の例外処理はModelの責務外とする。
 
-## 12. Domain Error Examples
+## 12. Domainエラーの例
 
-| `code` | `target` | Condition |
+| `code` | `target` | 発生条件 |
 | --- | --- | --- |
-| `REQUIRED` | Attribute name | A required value is missing |
-| `LENGTH_OUT_OF_RANGE` | Attribute name | Character count is outside the allowed range |
-| `CONTROL_CHARACTER` | Attribute name | Contains a control character |
-| `INVALID_HEX_COLOR` | Color attribute name | Is not in `#RRGGBB` format |
-| `UNSUPPORTED_IMAGE_TYPE` | `type` | Image type is not defined |
-| `VISIBLE_CHARACTER_REQUIRED` | Combination of character attributes | Both values consist only of whitespace |
+| `REQUIRED` | 属性名 | 必須値が存在しない |
+| `LENGTH_OUT_OF_RANGE` | 属性名 | 文字数が許容範囲外 |
+| `CONTROL_CHARACTER` | 属性名 | 制御文字を含む |
+| `INVALID_HEX_COLOR` | 色属性名 | `#RRGGBB` 形式ではない |
+| `UNSUPPORTED_IMAGE_TYPE` | `type` | 定義されていない画像種類 |
+| `VISIBLE_CHARACTER_REQUIRED` | 文字属性の組み合わせ | 両方が空白文字のみ |
 
-## 13. Test Contract
+## 13. テスト契約
 
-The Model must be testable without external services or a database.
+Modelは外部サービスやDBを使わずに検証できるようにする。
 
-At minimum, tests must cover:
+最低限、次の振る舞いをテストする。
 
-- Creating valid and rejecting undefined `ImageType` values
-- `RenderText` required, length, whitespace, and control-character constraints
-- `PatternCharacter` required, length, and control-character constraints
-- Rejecting the state where both pattern characters consist only of whitespace
-- Creating valid `HexColor` values and rejecting invalid HEX formats
-- Correct HEX-to-RGB conversion
-- RGB component range validation
-- Creating valid `ImageGenerationRequest` values
-- Rejecting invalid `ImageGenerationRequest` values
+- 有効な `ImageType` を生成できる
+- 未定義の `ImageType` を拒否する
+- `RenderText` の必須・長さ・空白・制御文字を検証する
+- `PatternCharacter` の必須・長さ・制御文字を検証する
+- 2つのパターン文字が同時に空白のみになる状態を拒否する
+- 有効な `#RRGGBB` を `HexColor` として生成できる
+- 不正なHEX形式を拒否する
+- HEXからRGBへの変換結果が正しい
+- RGB各成分の範囲を検証する
+- 有効な値から `ImageGenerationRequest` を生成できる
+- 不正な値を含む `ImageGenerationRequest` を生成できない
 
-## 14. Decisions
+## 14. 決定事項
 
-There are no unresolved items. Character counting, generated image filename representation, and validation failure representation follow the definitions in this document.
+未決事項はない。文字数、生成画像のファイル名、検証失敗の表現は本書の定義に従う。
