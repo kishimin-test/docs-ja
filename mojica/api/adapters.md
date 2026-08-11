@@ -18,14 +18,9 @@ AdapterはInfrastructure層に配置し、Glyph Forge API、HTTPクライアン�
 - 外部APIエラーの `ImageGenerationPortError` への変換
 - Adapterのテスト契約
 
-HTTP入力の解析、Domain Modelの検証、公開APIのレスポンス生成、レート制限の判定、エラーメッセージのローカライズは対象外とする。
-
 ## 3. 依存方向
 
 ```text
-Service
-    │
-    ▼
 ImageGenerationPort
     ▲
     │ implements
@@ -37,7 +32,7 @@ GlyphForgeImageGenerationAdapter
     └── Glyph Forge API
 ```
 
-`GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装する。Service、Model、PortはGlyph Forge APIのURL、HTTPクライアント、外部DTOを参照しない。
+`GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装し、Glyph Forge APIのURL、HTTPクライアント、外部DTOへの依存をAdapter内部に閉じ込める。
 
 ## 4. Adapterの責務
 
@@ -53,17 +48,6 @@ GlyphForgeImageGenerationAdapter
 - Glyph Forge API固有のレスポンスDTOまたはバイナリを `GeneratedImage` へ変換する
 - 外部API固有の失敗を `ImageGenerationPortError` へ変換する
 
-### 担当しないこと
-
-- HTTP DTOの必須値・形式・範囲の検証
-- `ImageGenerationRequest` の不変条件の検証
-- 画像生成に関する業務ルールの追加
-- mojica APIのHTTPステータスコードの決定
-- `Accept-Language` の解釈
-- エラーメッセージの翻訳
-- リクエスト単位のレート制限の判定
-- 外部APIのエラー本文や例外を上位層へそのまま返すこと
-
 ## 5. Port実装契約
 
 Adapterは次のPort契約を実装する。
@@ -74,9 +58,9 @@ generate(
 ) -> Result<GeneratedImage, ImageGenerationPortError>
 ```
 
-入力はModelの制約を満たした `ImageGenerationRequest` に限定する。Adapterは未検証の文字列やHTTPリクエストを受け取らない。
+入力はPort契約を満たした `ImageGenerationRequest` に限定する。Adapterは未検証の文字列やHTTPリクエストを受け取らない。
 
-成功時は画像バイナリとメディア形式を含む `GeneratedImage` を返す。ダウンロード用の一意な `fileName` はServiceの責務として、`models.md` の形式に従う。
+成功時は画像バイナリとメディア形式を含む `GeneratedImage` を返す。ダウンロード用の `fileName` は `models.md` の契約に従う。
 
 失敗時は、HTTPクライアントの例外、JSONデシリアライズ例外、外部API固有のエラー型を返さず、`ImageGenerationPortError` を返す。
 
@@ -106,13 +90,13 @@ ImageGenerationRequest
 | `x-background` | `POST` | `/images/background` |
 | `x-icon` | `POST` | `/images/x-icon` |
 
-この対応表はAdapterのInfrastructure実装に閉じ込める。Controller、Service、Model、Portは外部APIのパスを保持しない。
+この対応表はAdapterのInfrastructure実装に閉じ込める。
 
-未定義の `ImageType` はModelで生成できないため、エンドポイント選択処理へ到達させない。防御的に未定義値を検出した場合は `FAILED` として扱い、外部APIへリクエストしない。
+未定義の `ImageType` はエンドポイント選択処理へ到達させない。防御的に未定義値を検出した場合は `FAILED` として扱い、外部APIへリクエストしない。
 
 ## 8. HEXからRGBへの変換
 
-Adapterは外部APIへ送信する前に、Modelの `HexColor` からRGB値を取得する。
+Adapterは外部APIへ送信する前に、`HexColor` からRGB値を取得する。
 
 ```text
 HexColor("#FF69B4")
@@ -160,15 +144,13 @@ Glyph Forge APIが画像生成失敗を示す場合は `FAILED` に変換する�
 
 Adapterは外部APIの失敗を `ImageGenerationPortError` へ変換する。
 
-| 外部で発生した事象 | Portエラー | 公開APIでの扱い |
-| --- | --- | --- |
-| レート制限 | `RATE_LIMITED` | `429 Too Many Requests` |
-| タイムアウト | `TIMEOUT` | `504 Gateway Timeout` |
-| DNS、接続、TLS、HTTPクライアントの通信失敗 | `UNAVAILABLE` | `502 Bad Gateway` |
-| 画像として解釈できない応答 | `INVALID_RESPONSE` | `502 Bad Gateway` |
-| Glyph Forge APIの生成失敗 | `FAILED` | `502 Bad Gateway` |
-
-公開APIのステータスコード、公開メッセージ、`Accept-Language` に基づく翻訳はControllerまたは外側のエラー変換境界で決定する。Adapterは日本語・英語のメッセージを生成しない。
+| 外部で発生した事象 | Portエラー |
+| --- | --- |
+| レート制限 | `RATE_LIMITED` |
+| タイムアウト | `TIMEOUT` |
+| DNS、接続、TLS、HTTPクライアントの通信失敗 | `UNAVAILABLE` |
+| 画像として解釈できない応答 | `INVALID_RESPONSE` |
+| Glyph Forge APIの生成失敗 | `FAILED` |
 
 ## 12. タイムアウトとキャンセル
 
@@ -208,7 +190,7 @@ HTTPクライアントを差し替え、Adapterから観測できる変換結果
 
 ### Mediumテスト
 
-利用可能なテスト用Glyph Forge APIまたはHTTPスタブを使用し、Portから外部API境界までの契約を検証する。
+利用可能なテスト用Glyph Forge APIまたはHTTPスタブを使用し、Adapterから外部API境界までの契約を検証する。
 
 - 実際のContent-Typeと画像バイナリを処理できる
 - `Retry-After` を安全に解釈できる
@@ -235,11 +217,9 @@ Glyph Forge APIの実通信を行うテストでは、秘密情報をリポジ�
 ### Adapter契約として確定する境界
 
 - 外部APIのURL、HTTPクライアント、JSON DTOはAdapter内部に閉じ込める
-- Portは外部API固有の型を公開しない
 - Adapterは検証済みの `ImageGenerationRequest` だけを受け取る
 - Adapterは外部APIの結果を `GeneratedImage` または `ImageGenerationPortError` へ変換する
 - 外部APIのエラー本文、例外、スタックトレース、内部URL、認証情報を上位層へ漏出させない
-- 公開APIのHTTPステータスコードと表示メッセージはAdapterで決定しない
 
 ### 外部API仕様として未確定の項目
 
@@ -259,7 +239,7 @@ Glyph Forge APIの仕様書が既存リポジトリにないため、次の項�
 ## 16. 決定事項
 
 - AdapterはInfrastructure層に配置する
-- `GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` だけを通じてServiceから利用する
+- `GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装する
 - 外部APIのURL、HTTPクライアント、DTO、認証方式はAdapterの外側へ漏出させない
 - Domain Modelの検証をAdapterで重複実装しない
 - 外部APIの失敗は `ImageGenerationPortError` へ変換する
