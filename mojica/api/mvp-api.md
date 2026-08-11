@@ -390,6 +390,8 @@ Accept-Language: en
 | Content-Type     | `image/png`     |
 | レスポンス       | 生成したPNG画像 |
 
+ダウンロード用のファイル名は `Content-Disposition` の `filename` に設定する。ファイル名はリクエストごとに一意とし、形式は `mojica-{imageType}-{UUID}.png` とする。例：`mojica-x-icon-550e8400-e29b-41d4-a716-446655440000.png`。ユーザー入力値はファイル名に含めない。
+
 ASP.NET CoreはGlyph Forge APIから取得したPNG画像をクライアントへ返却する。
 
 ---

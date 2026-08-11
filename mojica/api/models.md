@@ -86,11 +86,13 @@ Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの
 
 生成時に制約を満たさない値を拒否する。生成後の値は常に制約を満たすため、ServiceやInfrastructureが同じ検証を重複して実装しない。
 
-文字数の数え方は、実装時にUnicodeの扱いを固定する。少なくとも、サロゲートペアを構成する文字を不正に2文字として扱わない。
+文字数はUnicodeの書記素クラスタ単位で数える。絵文字や結合文字を、ユーザーが認識する1文字として扱う。サロゲートペアを構成する文字を2文字として扱わない。
 
 ## 7. PatternCharacter
 
 `PatternCharacter` は、描画または背景のパターンを構成する文字列を表す。
+
+文字数の数え方は `RenderText` と同じく、Unicodeの書記素クラスタ単位とする。
 
 用途によって次の2種類を区別する。
 
@@ -198,9 +200,23 @@ Glyph Forge API固有のカラーDTOへの変換はInfrastructure側で行う。
 | --- | --- |
 | `content` | 画像のバイナリデータ |
 | `mediaType` | 画像のメディア形式 |
-| `fileName` | ダウンロード時に使用するファイル名（必要な場合） |
+| `fileName` | ダウンロード時に使用する一意なファイル名 |
 
 MVPでは生成画像を永続化しないため、`GeneratedImage` は保存先やデータベースIDを持たない。
+
+`fileName` はService側でリクエストごとに生成する。形式は次のとおりとする。
+
+```text
+mojica-{imageType}-{UUID}.png
+```
+
+例：
+
+```text
+mojica-x-icon-550e8400-e29b-41d4-a716-446655440000.png
+```
+
+`imageType` は正規化された `ImageType` の値を使用し、ユーザー入力値はファイル名に含めない。
 
 Glyph Forge APIのレスポンスDTOから `GeneratedImage` への変換はInfrastructure境界で行う。Controllerは `GeneratedImage` をHTTPレスポンスへ変換する。
 
@@ -214,10 +230,12 @@ Modelの生成または不変条件の検証に失敗した場合は、利用側
 | --- | --- |
 | `code` | 言語に依存しないエラーコード |
 | `target` | 問題のあるDomain属性または属性の組み合わせ |
-| `reason` | 機械的に判定できる失敗理由 |
+| `reason` | `ModelValidationReason` として表現する機械的に判定できる失敗理由 |
 | `details` | 必要に応じた安全な補足情報 |
 
-`ModelValidationError` は日本語・英語の表示メッセージやHTTPステータスコードを持たない。
+`ModelValidationError` は日本語・英語の表示メッセージやHTTPステータスコードを持たない。`reason` は閉じた型である `ModelValidationReason` として表現する。
+
+想定内の検証失敗は例外ではなく、`Result<T, ModelValidationError>` 相当の戻り値で扱う。予期しない実行時障害の例外処理はModelの責務外とする。
 
 ServiceまたはControllerが `ModelValidationError` を公開APIのエラー契約へ変換する。表示メッセージは `Accept-Language` に基づいて外側の層で解決する。
 
@@ -269,10 +287,6 @@ Modelは外部サービスやDBを使わずに検証できるようにする。
 
 テストはHTTPステータスコードやGlyph Forge APIの通信ではなく、Modelから観測できる値と検証結果を確認する。HTTP契約と外部API契約のテストは、それぞれController・Infrastructureの境界で行う。
 
-## 16. 未決事項
+## 16. 決定事項
 
-- 文字数をUnicodeスカラー値で数えるか、ユーザーが認識する書記素クラスタで数えるかを実装前に確定する。
-- `GeneratedImage.fileName` の命名規則をControllerまたはServiceの設計時に確定する。
-- `ModelValidationError.reason` の具体的な型を、実装言語のResult/Exception方針と合わせて確定する。
-
-未決事項を確定した場合は、この文書と `mvp-api.md` の制約が矛盾しないことを確認する。
+未決事項はない。文字数、生成画像のファイル名、検証失敗の表現は本書の定義に従う。
