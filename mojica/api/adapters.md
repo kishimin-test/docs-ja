@@ -60,7 +60,7 @@ generate(
 
 入力はPort契約を満たした `ImageGenerationRequest` に限定する。Adapterは未検証の文字列やHTTPリクエストを受け取らない。
 
-成功時は画像バイナリとメディア形式を含む `GeneratedImage` を返す。ダウンロード用の `fileName` は `models.md` の契約に従う。
+成功時は画像バイナリとメディア形式を含む `GeneratedImage` を返す。
 
 失敗時は、HTTPクライアントの例外、JSONデシリアライズ例外、外部API固有のエラー型を返さず、`ImageGenerationPortError` を返す。
 
@@ -78,7 +78,7 @@ ImageGenerationRequest
         └── PatternCharacter ────▶ Glyph Forge character field
 ```
 
-変換処理は外部APIのDTO構造に依存する。Glyph Forge APIの具体的なJSONフィールド名、認証方式、追加ヘッダー、レスポンスDTOの詳細は外部API契約を確認してから実装する。既存のmojica設計書にない外部仕様を推測して実装しない。
+変換処理は15章で確定したGlyph Forge API契約に従う。外部API固有のDTOはAdapter内部でのみ使用する。
 
 ## 7. エンドポイント選択
 
@@ -122,7 +122,7 @@ Adapterは次の要件を満たすHTTPリクエストを送信する。
 - 設定されたタイムアウトを適用する
 - リクエスト本文へHTTP入力DTOや未検証の値を直接渡さない
 
-Glyph Forge APIの認証方式、必須ヘッダー、具体的なリクエストDTOは、外部API契約で確定した値だけを使用する。秘密情報をソースコードやログへ記録しない。
+Glyph Forge APIの具体的なリクエストDTOは15章の契約に従う。秘密情報をソースコードやログへ記録しない。
 
 ## 10. HTTPレスポンス
 
@@ -158,7 +158,7 @@ Adapterは設定されたタイムアウトを超えて外部APIを待ち続け�
 
 呼び出し元からキャンセルトークンが渡された場合は、HTTPクライアントへ伝播する。キャンセルとタイムアウトを呼び出し元が分類できるよう、内部の例外を `TIMEOUT` または適切なPortエラーへ変換する。
 
-タイムアウト後の自動再試行は行わない。画像生成は再実行による重複生成の可能性があるため、再試行方針はGlyph Forge APIの冪等性契約を確認してから別途決定する。
+タイムアウト後の自動再試行は行わない。画像生成APIに冪等性キーの契約がなく、再試行による重複生成を避けるためである。
 
 ## 13. 設定と秘密情報
 
@@ -166,7 +166,6 @@ Adapterが使用する環境依存値は設定境界から注入する。
 
 - Glyph Forge APIのBase URL
 - 接続・応答タイムアウト
-- 認証情報またはAPIキー
 - 必要なサービス固有ヘッダー
 
 AdapterにBase URLや秘密情報をハードコードしない。秘密情報を例外、ログ、Portエラー、公開APIレスポンスへ含めない。
@@ -199,26 +198,81 @@ HTTPクライアントを差し替え、Adapterから観測できる変換結果
 
 Glyph Forge APIの実通信を行うテストでは、秘密情報をリポジトリへ保存せず、テスト間で認証状態やポートを共有しない。
 
-## 15. 外部API仕様の未確定事項
+## 15. Glyph Forge API契約
 
-Glyph Forge APIの仕様書が既存リポジトリにないため、次の項目は外部API提供者の契約確認後に固定する。
+Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のとおり確定する。
 
-- 各エンドポイントのリクエストJSONフィールド名と型
-- RGBカラーDTOの正確な形状
-- 認証方式と必須ヘッダー
-- 成功時の正確なContent-Typeとレスポンス形式
-- 失敗時のステータスコードとエラー形式
-- `Retry-After` の単位と値の形式
-- タイムアウト値
-- タイムアウト時の再実行可否と冪等性
+### リクエスト
 
-未確定項目がある間は、Adapter設計書やコードへ外部API DTOの具体的な型・フィールド名・認証方式を推測して固定しない。
+| mojicaの値 | Glyph Forge APIのフィールド | 変換 |
+| --- | --- | --- |
+| `text` | `frame_text` | 文字列をそのまま渡す |
+| `foregroundCharacter` | `inner_text` | 文字列をそのまま渡す |
+| `backgroundCharacter` | `outer_text` | 文字列をそのまま渡す |
+| `foregroundColor` | `inner_color` | `RgbColor` を `[R, G, B]` へ変換 |
+| `backgroundColor` | `outer_color` | `RgbColor` を `[R, G, B]` へ変換 |
+
+送信するJSONは次の形式とする。
+
+```json
+{
+  "frame_text": "KA",
+  "inner_text": "🌻",
+  "outer_text": "☀",
+  "inner_color": [255, 212, 0],
+  "outer_color": [255, 105, 180]
+}
+```
+
+`frame_font_size` と `output_font_size` はmojica APIで指定しない。Glyph Forge APIの既定値である `20` を使用する。
+
+リクエストのContent-Typeは `application/json; charset=utf-8` とする。現行のGlyph Forge API契約では認証ヘッダーを付与しない。
+
+### エンドポイント
+
+| `ImageType` | Method | Path |
+| --- | --- | --- |
+| `standard` | `POST` | `/images` |
+| `x-background` | `POST` | `/images/background` |
+| `x-icon` | `POST` | `/images/x-icon` |
+
+### 成功レスポンス
+
+- HTTPステータスは `200 OK`
+- Content-Typeは `image/png`
+- レスポンスボディはPNG画像のバイナリ
+- Adapterは画像バイナリとContent-Typeから `GeneratedImage` を生成する
+
+### エラーレスポンス
+
+| Glyph Forge APIの応答 | Adapterの扱い |
+| --- | --- |
+| `422 Unprocessable Entity` | `FAILED` |
+| `429 Too Many Requests` | `RATE_LIMITED` |
+| `503 Service Unavailable` | `UNAVAILABLE` |
+| その他の5xx | `FAILED` |
+| 画像として解釈できない2xx応答 | `INVALID_RESPONSE` |
+
+`429` と `503` の `Retry-After` は、整数秒として `retryAfter` に設定する。Glyph Forge APIはレート制限時にクライアント単位で3件のバーストと毎分10件の補充を行い、容量不足時には `503` と `Retry-After: 1` を返す。
+
+### タイムアウトと再試行
+
+Glyph Forge APIの画像生成処理の上限は30秒である。AdapterのHTTPクライアントタイムアウトは、応答を受信するため35秒に設定する。
+
+HTTPクライアント自身のタイムアウトは `TIMEOUT` に変換する。タイムアウト、通信失敗、`503` のいずれの場合も、Adapterは自動再試行しない。画像生成APIに冪等性キーの契約がないため、再試行による重複生成を避ける。
+
+### 参照
+
+- [Glyph Forge README](https://github.com/kishimin/glyph-forge/blob/main/README.md)
+- [Glyph Forge API schema](https://github.com/kishimin/glyph-forge/blob/main/app/schemas.py)
+- [Glyph Forge API implementation](https://github.com/kishimin/glyph-forge/blob/main/app/main.py)
+- [Glyph Forge request limits](https://github.com/kishimin/glyph-forge/blob/main/app/request_limits.py)
 
 ## 16. 決定事項
 
 - AdapterはInfrastructure層に配置する
 - `GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装する
-- 外部APIのURL、HTTPクライアント、DTO、認証方式はAdapterの外側へ漏出させない
+- 外部APIのURL、HTTPクライアント、DTOはAdapterの外側へ漏出させない
 - Domain Modelの検証をAdapterで重複実装しない
 - 外部APIの失敗は `ImageGenerationPortError` へ変換する
-- 外部API固有DTOの詳細はGlyph Forge API契約が確定するまで固定しない
+- Glyph Forge APIのリクエスト・レスポンス・エラー契約は15章の定義に従う
