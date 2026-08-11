@@ -1,24 +1,24 @@
-# mojica API Adapter設計書
+# mojica API Adapter Design
 
-## 1. 目的
+## 1. Purpose
 
-`ImageGenerationPort` の契約を、Glyph Forge APIとのHTTP通信へ変換するAdapterの責務と境界を定義する。
+This document defines the responsibilities and boundaries of the Adapter that converts the `ImageGenerationPort` contract into HTTP communication with the Glyph Forge API.
 
-AdapterはInfrastructure層に配置し、Glyph Forge API、HTTPクライアント、JSONライブラリ、ASP.NET Coreなどの外部技術への依存を閉じ込める。
+The Adapter is placed in the Infrastructure layer and contains dependencies on external technologies such as the Glyph Forge API, HTTP client, JSON library, and ASP.NET Core.
 
-## 2. 対象範囲
+## 2. Scope
 
-この文書では、次を定義する。
+This document defines:
 
-- `GlyphForgeImageGenerationAdapter` の責務
-- `ImageGenerationPort` から外部APIへの変換境界
-- `ImageType` に応じた外部エンドポイントの選択
-- `HexColor` からRGB値への変換
-- 外部APIの応答検証とDomain結果への変換
-- 外部APIエラーの `ImageGenerationPortError` への変換
-- Adapterのテスト契約
+- Responsibilities of `GlyphForgeImageGenerationAdapter`
+- The conversion boundary from `ImageGenerationPort` to the external API
+- Selection of an external endpoint according to `ImageType`
+- Conversion from `HexColor` to RGB values
+- Validation of external responses and conversion to Domain results
+- Conversion of external API errors to `ImageGenerationPortError`
+- The Adapter test contract
 
-## 3. 依存方向
+## 3. Dependency Direction
 
 ```text
 ImageGenerationPort
@@ -32,25 +32,25 @@ GlyphForgeImageGenerationAdapter
     └── Glyph Forge API
 ```
 
-`GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装し、Glyph Forge APIのURL、HTTPクライアント、外部DTOへの依存をAdapter内部に閉じ込める。
+`GlyphForgeImageGenerationAdapter` implements `ImageGenerationPort` and keeps dependencies on Glyph Forge API URLs, the HTTP client, and external DTOs inside the Adapter.
 
-## 4. Adapterの責務
+## 4. Adapter Responsibilities
 
-### 担当すること
+### Responsibilities
 
-- 検証済みの `ImageGenerationRequest` を受け取る
-- `ImageType` をGlyph Forge APIのエンドポイントへ変換する
-- `HexColor` の値をRGB値へ変換する
-- Glyph Forge API固有のリクエストDTOを生成する
-- HTTPリクエストを送信する
-- タイムアウトとキャンセルを処理する
-- HTTPステータス、ヘッダー、Content-Type、画像データを検証する
-- Glyph Forge API固有のレスポンスDTOまたはバイナリを `GeneratedImage` へ変換する
-- 外部API固有の失敗を `ImageGenerationPortError` へ変換する
+- Receive a validated `ImageGenerationRequest`
+- Convert `ImageType` to a Glyph Forge API endpoint
+- Convert the value of `HexColor` to RGB values
+- Create a Glyph Forge API-specific request DTO
+- Send an HTTP request
+- Handle timeouts and cancellation
+- Validate the HTTP status, headers, Content-Type, and image data
+- Convert a Glyph Forge API-specific response DTO or binary data into `GeneratedImage`
+- Convert external API-specific failures into `ImageGenerationPortError`
 
-## 5. Port実装契約
+## 5. Port Implementation Contract
 
-Adapterは次のPort契約を実装する。
+The Adapter implements the following Port contract:
 
 ```text
 generate(
@@ -58,15 +58,15 @@ generate(
 ) -> Result<GeneratedImage, ImageGenerationPortError>
 ```
 
-入力はPort契約を満たした `ImageGenerationRequest` に限定する。Adapterは未検証の文字列やHTTPリクエストを受け取らない。
+Input is limited to an `ImageGenerationRequest` that satisfies the Port contract. The Adapter does not receive unvalidated strings or HTTP requests.
 
-成功時は画像バイナリとメディア形式を含む `GeneratedImage` を返す。
+On success, return a `GeneratedImage` containing image binary data and media type.
 
-失敗時は、HTTPクライアントの例外、JSONデシリアライズ例外、外部API固有のエラー型を返さず、`ImageGenerationPortError` を返す。
+On failure, return `ImageGenerationPortError` instead of HTTP client exceptions, JSON deserialization exceptions, or external API-specific error types.
 
-## 6. リクエスト変換
+## 6. Request Conversion
 
-Adapterは次の境界でDomain Modelを外部API DTOへ変換する。
+The Adapter converts Domain Models to external API DTOs at the following boundary:
 
 ```text
 ImageGenerationRequest
@@ -78,11 +78,11 @@ ImageGenerationRequest
         └── PatternCharacter ────▶ Glyph Forge character field
 ```
 
-変換処理は15章で確定したGlyph Forge API契約に従う。外部API固有のDTOはAdapter内部でのみ使用する。
+The conversion follows the Glyph Forge API contract defined in Section 15. External API-specific DTOs are used only inside the Adapter.
 
-## 7. エンドポイント選択
+## 7. Endpoint Selection
 
-`ImageType` とGlyph Forge APIのエンドポイントの対応は次のとおりとする。
+Use the following mapping between `ImageType` and Glyph Forge API endpoints:
 
 | `ImageType` | Method | Path |
 | --- | --- | --- |
@@ -90,13 +90,13 @@ ImageGenerationRequest
 | `x-background` | `POST` | `/images/background` |
 | `x-icon` | `POST` | `/images/x-icon` |
 
-この対応表はAdapterのInfrastructure実装に閉じ込める。
+Keep this mapping inside the Adapter's Infrastructure implementation.
 
-未定義の `ImageType` はエンドポイント選択処理へ到達させない。防御的に未定義値を検出した場合は `FAILED` として扱い、外部APIへリクエストしない。
+An undefined `ImageType` must not reach endpoint selection. If an undefined value is detected defensively, handle it as `FAILED` and do not send a request to the external API.
 
-## 8. HEXからRGBへの変換
+## 8. HEX-to-RGB Conversion
 
-Adapterは外部APIへ送信する前に、`HexColor` からRGB値を取得する。
+Before sending a request to the external API, the Adapter obtains RGB values from `HexColor`.
 
 ```text
 HexColor("#FF69B4")
@@ -108,111 +108,111 @@ RgbColor(red: 255, green: 105, blue: 180)
 Glyph Forge API-specific color DTO
 ```
 
-`#RRGGBB` 形式の検証、16進数の解釈、各成分の範囲検証は `HexColor` と `RgbColor` が担当する。Adapterは、取得したRGB値をGlyph Forge API固有DTOへ詰め替えるだけとする。
+`HexColor` and `RgbColor` are responsible for validating the `#RRGGBB` format, interpreting hexadecimal values, and validating component ranges. The Adapter only places the obtained RGB values into the Glyph Forge API-specific DTO.
 
-## 9. HTTPリクエスト
+## 9. HTTP Request
 
-Adapterは次の要件を満たすHTTPリクエストを送信する。
+The Adapter sends HTTP requests that satisfy the following requirements:
 
-- `POST` メソッドを使用する
-- `ImageType` に対応したパスを使用する
-- Glyph Forge APIの契約で定義されたContent-Typeを使用する
-- 必要な認証情報や設定値は安全な設定境界から取得する
-- キャンセルトークンをHTTPリクエストへ伝播する
-- 設定されたタイムアウトを適用する
-- リクエスト本文へHTTP入力DTOや未検証の値を直接渡さない
+- Use the `POST` method
+- Use the path corresponding to `ImageType`
+- Use the Content-Type defined by the Glyph Forge API contract
+- Obtain required credentials and configuration values from a secure configuration boundary
+- Propagate the cancellation token to the HTTP request
+- Apply the configured timeout
+- Do not pass HTTP input DTOs or unvalidated values directly into the request body
 
-Glyph Forge APIの具体的なリクエストDTOは15章の契約に従う。秘密情報をソースコードやログへ記録しない。
+The specific Glyph Forge API request DTO follows the contract in Section 15. Do not record secrets in source code or logs.
 
-## 10. HTTPレスポンス
+## 10. HTTP Response
 
-Adapterは、外部APIのレスポンスを次の順序で処理する。
+The Adapter processes an external API response in the following order:
 
-1. HTTPステータスを確認する
-2. `429 Too Many Requests` の場合は `RATE_LIMITED` に変換する
-3. `Retry-After` を安全に解釈できる場合は `retryAfter` に設定する
-4. タイムアウトの場合は `TIMEOUT` に変換する
-5. その他の通信失敗や利用不能の場合は `UNAVAILABLE` に変換する
-6. 成功レスポンスのContent-Typeを確認する
-7. 画像バイナリが存在し、読み取り可能であることを確認する
-8. 画像データとメディア形式を `GeneratedImage` へ変換する
-9. 期待する画像として解釈できない場合は `INVALID_RESPONSE` に変換する
+1. Check the HTTP status
+2. Convert `429 Too Many Requests` to `RATE_LIMITED`
+3. Set `retryAfter` when `Retry-After` can be interpreted safely
+4. Convert a timeout to `TIMEOUT`
+5. Convert other communication failures or unavailable states to `UNAVAILABLE`
+6. Check the Content-Type of a successful response
+7. Verify that image binary data exists and can be read
+8. Convert the image data and media type into `GeneratedImage`
+9. Convert an uninterpretable image response to `INVALID_RESPONSE`
 
-Glyph Forge APIが画像生成失敗を示す場合は `FAILED` に変換する。外部APIのエラー本文、スタックトレース、内部URL、認証情報は上位層へ渡さない。
+When the Glyph Forge API indicates an image generation failure, convert it to `FAILED`. Do not pass the external API error body, stack trace, internal URL, or credentials to an upper layer.
 
-## 11. エラー変換
+## 11. Error Conversion
 
-Adapterは外部APIの失敗を `ImageGenerationPortError` へ変換する。
+The Adapter converts external API failures into `ImageGenerationPortError`.
 
-| 外部で発生した事象 | Portエラー |
+| External event | Port error |
 | --- | --- |
-| レート制限 | `RATE_LIMITED` |
-| タイムアウト | `TIMEOUT` |
-| DNS、接続、TLS、HTTPクライアントの通信失敗 | `UNAVAILABLE` |
-| 画像として解釈できない応答 | `INVALID_RESPONSE` |
-| Glyph Forge APIの生成失敗 | `FAILED` |
+| Rate limit | `RATE_LIMITED` |
+| Timeout | `TIMEOUT` |
+| DNS, connection, TLS, or HTTP client communication failure | `UNAVAILABLE` |
+| Response that cannot be interpreted as an image | `INVALID_RESPONSE` |
+| Glyph Forge API generation failure | `FAILED` |
 
-## 12. タイムアウトとキャンセル
+## 12. Timeout and Cancellation
 
-Adapterは設定されたタイムアウトを超えて外部APIを待ち続けない。
+The Adapter must not wait for the external API beyond the configured timeout.
 
-呼び出し元からキャンセルトークンが渡された場合は、HTTPクライアントへ伝播する。キャンセルとタイムアウトを呼び出し元が分類できるよう、内部の例外を `TIMEOUT` または適切なPortエラーへ変換する。
+When the caller supplies a cancellation token, propagate it to the HTTP client. Convert internal exceptions to `TIMEOUT` or an appropriate Port error so the caller can distinguish cancellation and timeout outcomes.
 
-タイムアウト後の自動再試行は行わない。画像生成APIに冪等性キーの契約がなく、再試行による重複生成を避けるためである。
+Do not automatically retry after a timeout. The image generation API has no idempotency-key contract, so this avoids duplicate generation caused by retries.
 
-## 13. 設定と秘密情報
+## 13. Configuration and Secrets
 
-Adapterが使用する環境依存値は設定境界から注入する。
+Inject environment-dependent values used by the Adapter through the configuration boundary.
 
-- Glyph Forge APIのBase URL
-- 接続・応答タイムアウト
-- 必要なサービス固有ヘッダー
+- Glyph Forge API base URL
+- Connection and response timeouts
+- Required service-specific headers
 
-AdapterにBase URLや秘密情報をハードコードしない。秘密情報を例外、ログ、Portエラー、公開APIレスポンスへ含めない。
+Do not hard-code the base URL or secrets in the Adapter. Do not include secrets in exceptions, logs, Port errors, or public API responses.
 
-## 14. テスト契約
+## 14. Test Contract
 
-### Smallテスト
+### Small Tests
 
-HTTPクライアントを差し替え、Adapterから観測できる変換結果を検証する。
+Replace the HTTP client and verify conversion results observable from the Adapter.
 
-- `standard` を `/images` へ変換する
-- `x-background` を `/images/background` へ変換する
-- `x-icon` を `/images/x-icon` へ変換する
-- `#FF69B4` をRGBの255、105、180へ変換する
-- 成功レスポンスを `GeneratedImage` へ変換する
-- 429を `RATE_LIMITED` へ変換する
-- タイムアウトを `TIMEOUT` へ変換する
-- 通信失敗を `UNAVAILABLE` へ変換する
-- 不正な画像レスポンスを `INVALID_RESPONSE` へ変換する
-- 外部APIの内部詳細をエラー結果へ含めない
+- Convert `standard` to `/images`
+- Convert `x-background` to `/images/background`
+- Convert `x-icon` to `/images/x-icon`
+- Convert `#FF69B4` to RGB values 255, 105, and 180
+- Convert a successful response to `GeneratedImage`
+- Convert 429 to `RATE_LIMITED`
+- Convert a timeout to `TIMEOUT`
+- Convert a communication failure to `UNAVAILABLE`
+- Convert an invalid image response to `INVALID_RESPONSE`
+- Exclude external API internal details from error results
 
-### Mediumテスト
+### Medium Tests
 
-利用可能なテスト用Glyph Forge APIまたはHTTPスタブを使用し、Adapterから外部API境界までの契約を検証する。
+Use an available test Glyph Forge API or HTTP stub to verify the contract from the Adapter to the external API boundary.
 
-- 実際のContent-Typeと画像バイナリを処理できる
-- `Retry-After` を安全に解釈できる
-- タイムアウトとキャンセルが外部通信へ伝播する
-- 外部APIの各エラー応答がPortエラーへ変換される
+- Process the actual Content-Type and image binary data
+- Interpret `Retry-After` safely
+- Propagate timeout and cancellation to external communication
+- Convert each external API error response into a Port error
 
-Glyph Forge APIの実通信を行うテストでは、秘密情報をリポジトリへ保存せず、テスト間で認証状態やポートを共有しない。
+For tests using real Glyph Forge API communication, do not store secrets in the repository or share authentication state or ports between tests.
 
-## 15. Glyph Forge API契約
+## 15. Glyph Forge API Contract
 
-Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のとおり確定する。
+Based on the Glyph Forge API implementation, the Adapter's external communication contract is finalized as follows.
 
-### リクエスト
+### Request
 
-| mojicaの値 | Glyph Forge APIのフィールド | 変換 |
+| mojica value | Glyph Forge API field | Conversion |
 | --- | --- | --- |
-| `text` | `frame_text` | 文字列をそのまま渡す |
-| `foregroundCharacter` | `inner_text` | 文字列をそのまま渡す |
-| `backgroundCharacter` | `outer_text` | 文字列をそのまま渡す |
-| `foregroundColor` | `inner_color` | `RgbColor` を `[R, G, B]` へ変換 |
-| `backgroundColor` | `outer_color` | `RgbColor` を `[R, G, B]` へ変換 |
+| `text` | `frame_text` | Pass the string unchanged |
+| `foregroundCharacter` | `inner_text` | Pass the string unchanged |
+| `backgroundCharacter` | `outer_text` | Pass the string unchanged |
+| `foregroundColor` | `inner_color` | Convert `RgbColor` to `[R, G, B]` |
+| `backgroundColor` | `outer_color` | Convert `RgbColor` to `[R, G, B]` |
 
-送信するJSONは次の形式とする。
+Use the following JSON format:
 
 ```json
 {
@@ -224,11 +224,11 @@ Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のと�
 }
 ```
 
-`frame_font_size` と `output_font_size` はmojica APIで指定しない。Glyph Forge APIの既定値である `20` を使用する。
+Do not specify `frame_font_size` or `output_font_size` in the mojica API. Use the Glyph Forge API default value of `20`.
 
-リクエストのContent-Typeは `application/json; charset=utf-8` とする。現行のGlyph Forge API契約では認証ヘッダーを付与しない。
+Use `application/json; charset=utf-8` as the request Content-Type. Under the current Glyph Forge API contract, do not add an authentication header.
 
-### エンドポイント
+### Endpoints
 
 | `ImageType` | Method | Path |
 | --- | --- | --- |
@@ -236,36 +236,36 @@ Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のと�
 | `x-background` | `POST` | `/images/background` |
 | `x-icon` | `POST` | `/images/x-icon` |
 
-### 成功レスポンス
+### Success Response
 
-- HTTPステータスは `200 OK`
-- Content-Typeは `image/png`
-- レスポンスボディはPNG画像のバイナリ
-- Adapterは画像バイナリとContent-Typeから `GeneratedImage` を生成する
+- HTTP status is `200 OK`
+- Content-Type is `image/png`
+- Response body is PNG image binary data
+- The Adapter creates `GeneratedImage` from the image binary data and Content-Type
 
-### エラーレスポンス
+### Error Response
 
-| Glyph Forge APIの応答 | Adapterの扱い |
+| Glyph Forge API response | Adapter handling |
 | --- | --- |
 | `422 Unprocessable Entity` | `FAILED` |
 | `429 Too Many Requests` | `RATE_LIMITED` |
 | `503 Service Unavailable` | `UNAVAILABLE` |
-| その他の5xx | `FAILED` |
-| 画像として解釈できない2xx応答 | `INVALID_RESPONSE` |
+| Other 5xx responses | `FAILED` |
+| A 2xx response that cannot be interpreted as an image | `INVALID_RESPONSE` |
 
-`429` と `503` の `Retry-After` は、整数秒として `retryAfter` に設定する。Glyph Forge APIはレート制限時にクライアント単位で3件のバーストと毎分10件の補充を行い、容量不足時には `503` と `Retry-After: 1` を返す。
+For `429` and `503`, set `retryAfter` to the integer number of seconds specified by `Retry-After`. The Glyph Forge API allows a burst of three requests per client and replenishes ten requests per minute when rate-limited; when capacity is unavailable, it returns `503` with `Retry-After: 1`.
 
-### タイムアウトと再試行
+### Timeout and Retry
 
-Glyph Forge APIの画像生成処理の上限は30秒である。AdapterのHTTPクライアントタイムアウトは、応答を受信するため35秒に設定する。
+The Glyph Forge API image generation limit is 30 seconds. Set the Adapter's HTTP client timeout to 35 seconds so the response can be received.
 
-HTTPクライアント自身のタイムアウトは `TIMEOUT` に変換する。タイムアウト、通信失敗、`503` のいずれの場合も、Adapterは自動再試行しない。画像生成APIに冪等性キーの契約がないため、再試行による重複生成を避ける。
+Convert an HTTP client timeout to `TIMEOUT`. The Adapter does not automatically retry on timeout, communication failure, or `503`. The image generation API has no idempotency-key contract, so this avoids duplicate generation caused by retries.
 
-## 16. 決定事項
+## 16. Decisions
 
-- AdapterはInfrastructure層に配置する
-- `GlyphForgeImageGenerationAdapter` は `ImageGenerationPort` を実装する
-- 外部APIのURL、HTTPクライアント、DTOはAdapterの外側へ漏出させない
-- Domain Modelの検証をAdapterで重複実装しない
-- 外部APIの失敗は `ImageGenerationPortError` へ変換する
-- Glyph Forge APIのリクエスト・レスポンス・エラー契約は15章の定義に従う
+- Place the Adapter in the Infrastructure layer
+- Have `GlyphForgeImageGenerationAdapter` implement `ImageGenerationPort`
+- Keep the external API URL, HTTP client, and DTOs from leaking outside the Adapter
+- Do not duplicate Domain Model validation in the Adapter
+- Convert external API failures to `ImageGenerationPortError`
+- Follow the request, response, and error contracts for the Glyph Forge API defined in Section 15

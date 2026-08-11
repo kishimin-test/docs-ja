@@ -1,22 +1,22 @@
-# mojica API Controller設計書
+# mojica API Controller Design
 
-## 1. 目的
+## 1. Purpose
 
-画像生成APIのHTTP境界を定義する。
+This document defines the HTTP boundary of the image generation API.
 
-ControllerはHTTPリクエストを受け取り、Domain Modelを生成してServiceへ委譲し、Serviceの結果をHTTPレスポンスへ変換する。
+The Controller receives an HTTP request, creates a Domain Model, delegates to the Service, and converts the Service result into an HTTP response.
 
 ## 2. ImageController
 
-画像生成エンドポイントは `ImageController` が担当する。
+`ImageController` is responsible for the image generation endpoint.
 
-### エンドポイント
+### Endpoint
 
 ```http
 POST /images
 ```
 
-### 依存方向
+### Dependency Direction
 
 ```text
 HTTP Request
@@ -31,176 +31,176 @@ ImageGenerationService
 HTTP Response
 ```
 
-Controllerは `ImageGenerationService` の契約を利用して画像生成を実行する。
+The Controller uses the `ImageGenerationService` contract to execute image generation.
 
-## 3. HTTPリクエスト
+## 3. HTTP Request
 
 ### Headers
 
-| ヘッダー | 必須 | Controllerでの扱い |
+| Header | Required | Controller handling |
 | --- | :---: | --- |
-| `Content-Type` | ○ | `application/json` として解析する |
-| `Accept-Language` | - | エラーメッセージの言語を決定する |
+| `Content-Type` | Yes | Parse as `application/json` |
+| `Accept-Language` | No | Determine the language of error messages |
 
-`Accept-Language` では `ja` と `en` をサポートする。未指定または未対応の値の場合は `ja` を使用する。
+The supported `Accept-Language` values are `ja` and `en`. Use `ja` when the header is omitted or contains an unsupported value.
 
 ### Body DTO
 
-Controllerは次のHTTP DTOを受け取る。
+The Controller receives the following HTTP DTO:
 
-| 属性 | 型 | 必須 |
+| Attribute | Type | Required |
 | --- | --- | :---: |
-| `type` | string | ○ |
-| `text` | string | ○ |
-| `foregroundCharacter` | string | ○ |
-| `foregroundColor` | string | ○ |
-| `backgroundCharacter` | string | ○ |
-| `backgroundColor` | string | ○ |
+| `type` | string | Yes |
+| `text` | string | Yes |
+| `foregroundCharacter` | string | Yes |
+| `foregroundColor` | string | Yes |
+| `backgroundCharacter` | string | Yes |
+| `backgroundColor` | string | Yes |
 
-HTTP DTOはDomain Modelと同一の型として扱わない。Controllerまたは入力Mapperが各値をDomain Modelへ変換する。
+The HTTP DTO and Domain Model are not treated as the same type. The Controller or input Mapper converts each value into a Domain Model.
 
-## 4. リクエスト処理
+## 4. Request Processing
 
-Controllerは次の順序で処理する。
+The Controller processes the request in the following order:
 
-1. HTTPメソッドとパスを受け付ける
-2. JSONをHTTP DTOへ解析する
-3. `Accept-Language` から表示言語を決定する
-4. HTTP DTOの各値を `ImageType`、`RenderText`、`PatternCharacter`、`HexColor` へ変換する
-5. Value Objectの生成結果から `ImageGenerationRequest` を生成する
-6. Domain検証に失敗した場合は `422 Unprocessable Entity` を返す
-7. 検証済みの `ImageGenerationRequest` を `ImageGenerationService` へ渡す
-8. Serviceの成功結果を画像レスポンスへ変換する
-9. Serviceのエラー結果を公開APIのエラー契約へ変換する
+1. Accept the HTTP method and path
+2. Parse JSON into the HTTP DTO
+3. Determine the display language from `Accept-Language`
+4. Convert each HTTP DTO value into `ImageType`, `RenderText`, `PatternCharacter`, or `HexColor`
+5. Create `ImageGenerationRequest` from the Value Object results
+6. Return `422 Unprocessable Entity` when Domain validation fails
+7. Pass the validated `ImageGenerationRequest` to `ImageGenerationService`
+8. Convert the successful Service result into an image response
+9. Convert the Service error result into the public API error contract
 
-Domain Modelを生成できない状態ではServiceを呼び出さない。複数の入力エラーを検出できる場合は、`errors` 配列へまとめて返す。
+Do not call the Service when a Domain Model cannot be created. When multiple input errors are detected, collect them in the `errors` array.
 
-## 5. HTTPエラー
+## 5. HTTP Errors
 
 ### 400 Bad Request
 
-HTTPリクエストをJSONとして解釈できない場合に返す。
+Return this response when the HTTP request cannot be interpreted as JSON.
 
-- JSON構文が不正
-- BodyをJSONとして解析できない
-- `Content-Type` またはリクエスト形式が期待と異なる
+- Invalid JSON syntax
+- The body cannot be parsed as JSON
+- The `Content-Type` or request format is different from what is expected
 
-レスポンスは次の形式とする。
+Use the following response format:
 
 ```json
 {
   "code": "BAD_REQUEST",
-  "message": "リクエストの形式が正しくありません。"
+  "message": "The request format is invalid."
 }
 ```
 
 ### 422 Unprocessable Entity
 
-JSONとして解析できるが、Domain Modelを生成できない場合に返す。
+Return this response when the request can be parsed as JSON but a Domain Model cannot be created.
 
-レスポンスの全体コードは `VALIDATION_ERROR` とし、詳細を `errors` 配列へ格納する。
+Use `VALIDATION_ERROR` as the overall response code and store details in the `errors` array.
 
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "入力内容に誤りがあります。",
+  "message": "The input contains errors.",
   "errors": [
     {
       "field": "foregroundColor",
-      "message": "HEXカラー形式（#RRGGBB）で指定してください。"
+      "message": "Specify a HEX color in the #RRGGBB format."
     }
   ]
 }
 ```
 
-`code`、`field`、検証理由は言語に依存しない。`message` だけを `Accept-Language` に応じて切り替える。
+`code`, `field`, and validation reasons are language-independent. Only `message` changes according to `Accept-Language`.
 
-## 6. Service結果の変換
+## 6. Service Result Conversion
 
-ControllerはServiceから返された結果を次のHTTPレスポンスへ変換する。
+The Controller converts the Service result into the following HTTP response:
 
-| Service結果 | HTTPステータス | 公開APIコード |
+| Service result | HTTP status | Public API code |
 | --- | --- | --- |
-| 成功 | `200 OK` | なし。画像を返す |
+| Success | `200 OK` | None; return the image |
 | `RATE_LIMITED` | `429 Too Many Requests` | `RATE_LIMIT_EXCEEDED` |
 | `TIMEOUT` | `504 Gateway Timeout` | `IMAGE_GENERATION_TIMEOUT` |
 | `UNAVAILABLE` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
 | `INVALID_RESPONSE` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
 | `FAILED` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
 
-`retryAfter` が結果に含まれる場合、Controllerは `Retry-After` ヘッダーへ変換する。
+When the result contains `retryAfter`, the Controller converts it into the `Retry-After` header.
 
-## 7. 成功レスポンス
+## 7. Success Response
 
-画像生成に成功した場合は、次のレスポンスを返す。
+Return the following response when image generation succeeds:
 
-| 項目 | 値 |
+| Item | Value |
 | --- | --- |
 | Status | `200 OK` |
 | Content-Type | `image/png` |
 | Body | `GeneratedImage.content` |
-| Content-Disposition | `attachment` と `GeneratedImage.fileName` |
+| Content-Disposition | `attachment` with `GeneratedImage.fileName` |
 
-`GeneratedImage.fileName` はServiceが生成した値を使用する。Controllerはファイル名を再生成したり、ユーザー入力値から組み立てたりしない。
+Use the value generated by the Service for `GeneratedImage.fileName`. The Controller does not regenerate the filename or construct it from user input.
 
-## 8. エラーメッセージ
+## 8. Error Messages
 
-Controllerは公開API用の日本語・英語メッセージを解決する。
+The Controller resolves Japanese and English messages for the public API.
 
-### 言語決定
+### Language Selection
 
-| `Accept-Language` | 使用言語 |
+| `Accept-Language` | Language |
 | --- | --- |
-| `ja` | 日本語 |
-| `en` | 英語 |
-| 未指定 | 日本語 |
-| 未対応の値 | 日本語 |
+| `ja` | Japanese |
+| `en` | English |
+| Omitted | Japanese |
+| Unsupported value | Japanese |
 
-エラーメッセージに次の情報を含めない。
+Do not include the following information in error messages:
 
-- 例外メッセージ
-- スタックトレース
-- Glyph Forge APIのレスポンス本文
-- 内部URL
-- 認証情報
-- SQLやInfrastructureの内部情報
+- Exception messages
+- Stack traces
+- Glyph Forge API response bodies
+- Internal URLs
+- Credentials
+- Internal SQL or Infrastructure information
 
-## 9. 予期しない例外
+## 9. Unexpected Exceptions
 
-ServiceまたはController内で予期しない例外が発生した場合は、詳細をログへ記録し、クライアントには次を返す。
+When an unexpected exception occurs in the Service or Controller, record the details in the log and return the following response to the client:
 
 ```json
 {
   "code": "INTERNAL_SERVER_ERROR",
-  "message": "画像生成中に予期しないエラーが発生しました。"
+  "message": "An unexpected error occurred during image generation."
 }
 ```
 
-HTTPステータスは `500 Internal Server Error` とする。内部例外の詳細はレスポンスへ含めない。
+Use `500 Internal Server Error` as the HTTP status. Do not include internal exception details in the response.
 
-## 10. Controllerテスト契約
+## 10. Controller Test Contract
 
-ControllerのテストはServiceを差し替え、HTTP境界から観測できる契約を検証する。
+Controller tests replace the Service and verify the contract observable at the HTTP boundary.
 
-最低限、次の振る舞いを確認する。
+At minimum, verify the following behaviors:
 
-- 正しいJSONを受け取り、ServiceへDomain Modelを渡す
-- 不正なJSONに `400 Bad Request` を返す
-- 必須値、文字数、制御文字、HEX形式のエラーに `422` を返す
-- 複数の検証エラーを `errors` 配列へ格納する
-- `Accept-Language: ja` で日本語メッセージを返す
-- `Accept-Language: en` で英語メッセージを返す
-- 言語未指定・未対応言語で日本語へフォールバックする
-- Service成功時に `200 image/png` とファイル名を返す
-- `RATE_LIMITED`、`TIMEOUT`、`UNAVAILABLE`、`INVALID_RESPONSE`、`FAILED` を正しいHTTP契約へ変換する
-- `retryAfter` を `Retry-After` ヘッダーへ変換する
-- 内部エラー詳細をレスポンスへ含めない
+- Accept valid JSON and pass a Domain Model to the Service
+- Return `400 Bad Request` for invalid JSON
+- Return `422` for required-value, length, control-character, and HEX-format errors
+- Store multiple validation errors in the `errors` array
+- Return Japanese messages for `Accept-Language: ja`
+- Return English messages for `Accept-Language: en`
+- Fall back to Japanese when the language is omitted or unsupported
+- Return `200 image/png` and a filename when the Service succeeds
+- Convert `RATE_LIMITED`, `TIMEOUT`, `UNAVAILABLE`, `INVALID_RESPONSE`, and `FAILED` to the correct HTTP contract
+- Convert `retryAfter` to the `Retry-After` header
+- Exclude internal error details from the response
 
-## 11. 決定事項
+## 11. Decisions
 
-- 画像生成HTTPエンドポイントは `POST /images` とする
-- ControllerはHTTP DTOとDomain Modelを分離する
-- Controllerは検証済みModelだけをServiceへ渡す
-- ControllerはService結果を公開APIのHTTP契約へ変換する
-- エラーメッセージは `Accept-Language` で日本語・英語を切り替える
-- 予期しない内部エラーの詳細をクライアントへ公開しない
+- Use `POST /images` as the image generation HTTP endpoint
+- Keep the HTTP DTO and Domain Model separate
+- Pass only validated Models to the Service
+- Convert the Service result into the public API HTTP contract
+- Switch Japanese and English error messages using `Accept-Language`
+- Do not expose unexpected internal error details to the client
