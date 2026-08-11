@@ -18,7 +18,7 @@ generate(
 ) -> Result<GeneratedImage, ImageGenerationPortError>
 ```
 
-入力はModelの不変条件を満たした `ImageGenerationRequest` とする。Serviceは入力値を外部APIのリクエスト形式へ変換しない。
+入力はModelの不変条件を満たした `ImageGenerationRequest` とする。
 
 ## 3. 依存方向
 
@@ -29,7 +29,7 @@ ImageGenerationService
 ImageGenerationPort
 ```
 
-Serviceは `ImageGenerationPort` の契約だけを参照する。HTTPクライアント、Glyph Forge APIのURL、外部API DTO、JSONライブラリ、データベースには依存しない。
+Serviceは `ImageGenerationPort` の契約を利用して画像生成を実行する。
 
 ## 4. 処理フロー
 
@@ -47,16 +47,6 @@ Serviceは、1回のユースケース実行でGlyph Forge APIへの自動再試
 ## 5. Port呼び出し
 
 Serviceは、受け取った `ImageGenerationRequest` を変更せずに `ImageGenerationPort` へ渡す。
-
-ServiceからPortへ渡す値は次のModel型に限定する。
-
-- `ImageGenerationRequest`
-- `ImageType`
-- `RenderText`
-- `PatternCharacter`
-- `HexColor`
-
-Glyph Forge APIのフィールド名、エンドポイント、RGB配列、Content-TypeはServiceで扱わない。
 
 ## 6. ファイル名生成
 
@@ -92,19 +82,11 @@ Portが成功した場合、Serviceは次の値を持つ `GeneratedImage` を返
 | `mediaType` | `ImageGenerationPort` の成功結果 |
 | `fileName` | Serviceが生成した `mojica-{imageType}-{UUID}.png` |
 
-Serviceは画像バイナリを永続化しない。生成結果は呼び出し元へ返して処理を終了する。
+生成結果は呼び出し元へ返して処理を終了する。
 
 ## 8. エラー結果
 
 Portが返した `ImageGenerationPortError` は、Serviceの結果としてそのまま返す。
-
-Serviceは次の情報を追加しない。
-
-- HTTPステータスコード
-- 日本語・英語の表示メッセージ
-- `Accept-Language` の解釈結果
-- Glyph Forge APIのレスポンス本文
-- 例外メッセージやスタックトレース
 
 Serviceは `ImageGenerationPortError` の分類を壊さず、呼び出し元がエラーコードと `retryAfter` を利用できる状態で返す。
 
@@ -114,16 +96,7 @@ Serviceは画像生成処理を自動再試行しない。
 
 画像生成は外部API上で副作用を持つため、タイムアウト後に再実行すると複数画像が生成される可能性がある。再試行が必要になった場合は、外部APIの冪等性キー契約を追加で定義してから変更する。
 
-## 10. 状態と永続化
-
-`ImageGenerationService` は画像生成の実行中にリクエスト間で共有する状態を保持しない。
-
-- 生成画像を保存しない
-- 生成履歴を保存しない
-- ユーザー情報を保存しない
-- Portの実装や通信状態をServiceのフィールドへ保持しない
-
-## 11. テスト契約
+## 10. テスト契約
 
 Serviceのテストは `ImageGenerationPort` を差し替えて、Serviceから観測できる振る舞いを検証する。
 
@@ -141,11 +114,9 @@ Serviceのテストは `ImageGenerationPort` を差し替えて、Serviceから�
 - Portが失敗した場合にファイル名を生成しない
 - Portの失敗後に自動再試行しない
 
-## 12. 決定事項
+## 11. 決定事項
 
 - 画像生成ユースケースは `ImageGenerationService` がオーケストレーションする
 - Serviceは `ImageGenerationPort` だけを通じて画像生成を実行する
 - Serviceは成功結果に一意なファイル名を付与する
-- ServiceはPortエラーをHTTPエラーや表示メッセージへ変換しない
 - Serviceは画像生成を自動再試行しない
-- Serviceは画像生成結果を永続化しない

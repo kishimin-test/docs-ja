@@ -2,7 +2,7 @@
 
 ## 1. 目的
 
-画像生成APIの業務ルールを、HTTP、ASP.NET Core、データベース、Glyph Forge APIなどの外部技術から分離して定義する。
+画像生成に必要な値と不変条件をDomain Modelとして定義する。
 
 この文書でいうModelは、画像生成に必要な値と不変条件を表すDomain Modelである。HTTPリクエスト/レスポンス用DTOやGlyph Forge APIの通信モデルはModelに含めない。
 
@@ -17,33 +17,7 @@ Modelは以下を担当する。
 - 画像生成リクエスト全体の不変条件の維持
 - Domainで発生した検証結果の表現
 
-Modelは以下を担当しない。
-
-- HTTPリクエストの解析
-- `Accept-Language` の解釈
-- HTTPステータスコードの決定
-- JSONのシリアライズ・デシリアライズ
-- データベースへの保存・取得
-- Glyph Forge APIへの通信
-- ASP.NET CoreやORMへの依存
-
-## 3. 依存方向
-
-```text
-Controller / Infrastructure
-            │
-            ▼
-          Model
-            ▲
-            │
-          Service
-```
-
-ModelからController、Service、Repository、Infrastructure、HTTP、DB、外部APIを参照しない。
-
-Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの型を参照しない。Repositoryの詳細は別のRepository設計書で定義する。
-
-## 4. Domain Model一覧
+## 3. Domain Model一覧
 
 | Model | 種類 | 役割 |
 | --- | --- | --- |
@@ -56,21 +30,21 @@ Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの
 | `GeneratedImage` | Domain Result | 生成された画像データを表す |
 | `ModelValidationError` | Domain Error | Modelの検証失敗を表す |
 
-## 5. ImageType
+## 4. ImageType
 
 生成する画像の種類を、自由な文字列ではなく定義済みの値として表現する。
 
-| 値 | 説明 | Glyph Forge APIの振り分け先 |
-| --- | --- | --- |
-| `standard` | 標準画像 | `POST /images` |
-| `x-background` | X背景画像 | `POST /images/background` |
-| `x-icon` | Xアイコン画像 | `POST /images/x-icon` |
+| 値 | 説明 |
+| --- | --- |
+| `standard` | 標準画像 |
+| `x-background` | X背景画像 |
+| `x-icon` | Xアイコン画像 |
 
-`ImageType` はGlyph Forge APIのパスを保持しない。外部APIのエンドポイントへの変換はInfrastructure側のAdapterが担当する。
+`ImageType` は画像種別の値だけを表現し、外部システムの情報を保持しない。
 
-未定義の値は `ImageType` として生成できない。外部入力の文字列から `ImageType` へ変換できない場合は、Serviceまたは入力境界でDomainの検証エラーへ変換する。
+未定義の値は `ImageType` として生成できない。
 
-## 6. RenderText
+## 5. RenderText
 
 `RenderText` は、文字アートとして描画する対象の文字列を表す。
 
@@ -84,11 +58,11 @@ Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの
 
 ### 生成規則
 
-生成時に制約を満たさない値を拒否する。生成後の値は常に制約を満たすため、ServiceやInfrastructureが同じ検証を重複して実装しない。
+生成時に制約を満たさない値を拒否する。生成後の値は常に制約を満たす。
 
 文字数はUnicodeの書記素クラスタ単位で数える。絵文字や結合文字を、ユーザーが認識する1文字として扱う。サロゲートペアを構成する文字を2文字として扱わない。
 
-## 7. PatternCharacter
+## 6. PatternCharacter
 
 `PatternCharacter` は、描画または背景のパターンを構成する文字列を表す。
 
@@ -115,9 +89,9 @@ Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの
 
 どちらか一方には、少なくとも1つの表示可能な文字を含める必要がある。これは個々の `PatternCharacter` ではなく、`ImageGenerationRequest` が検証する相互制約である。
 
-## 8. HexColor
+## 7. HexColor
 
-`HexColor` は、API境界から受け取ったHEXカラーを正規化して表すValue Objectである。
+`HexColor` は、HEXカラーを正規化して表すValue Objectである。
 
 ### 制約
 
@@ -138,7 +112,7 @@ Repository InterfaceをModel側に置く場合も、Modelはその実装やDBの
 
 ### RGBへの変換
 
-`HexColor` はRGB値を計算できるが、Glyph Forge APIのリクエスト形式は知らない。
+`HexColor` はRGB値を計算できる。
 
 ```text
 #FF69B4
@@ -148,9 +122,7 @@ G: 105
 B: 180
 ```
 
-Glyph Forge API固有のカラーDTOへの変換はInfrastructure側で行う。
-
-## 9. RgbColor
+## 8. RgbColor
 
 `RgbColor` は赤・緑・青の各成分を値として保持する。
 
@@ -162,7 +134,7 @@ Glyph Forge API固有のカラーDTOへの変換はInfrastructure側で行う。
 
 `RgbColor` は、生成時に各成分の範囲を検証する。負数、255超過、小数、未設定値は生成できない。
 
-## 10. ImageGenerationRequest
+## 9. ImageGenerationRequest
 
 `ImageGenerationRequest` は、画像生成ユースケースに渡す検証済みのDomain Modelである。
 
@@ -182,15 +154,14 @@ Glyph Forge API固有のカラーDTOへの変換はInfrastructure側で行う。
 - すべての属性が存在する
 - 各Value Objectの制約を満たす
 - `foregroundCharacter` と `backgroundCharacter` の両方が空白文字のみではない
-- 外部APIのエンドポイントやHTTP情報を保持しない
 
 ### 生成
 
-外部入力を直接 `ImageGenerationRequest` として扱わない。Controllerまたは入力MapperでHTTP DTOを受け取り、Value Objectを生成した後に `ImageGenerationRequest` を生成する。
+外部入力を直接 `ImageGenerationRequest` として扱わない。各Value Objectを生成した後に `ImageGenerationRequest` を生成する。
 
-生成に失敗した場合、部分的に不正なModelをServiceへ渡さない。
+生成に失敗した場合、`ImageGenerationRequest` を生成しない。
 
-## 11. GeneratedImage
+## 10. GeneratedImage
 
 `GeneratedImage` は、画像生成に成功した結果を表すDomain Resultである。
 
@@ -200,27 +171,9 @@ Glyph Forge API固有のカラーDTOへの変換はInfrastructure側で行う。
 | --- | --- |
 | `content` | 画像のバイナリデータ |
 | `mediaType` | 画像のメディア形式 |
-| `fileName` | ダウンロード時に使用する一意なファイル名 |
+| `fileName` | ダウンロード時に使用するファイル名 |
 
-MVPでは生成画像を永続化しないため、`GeneratedImage` は保存先やデータベースIDを持たない。
-
-`fileName` はService側でリクエストごとに生成する。形式は次のとおりとする。
-
-```text
-mojica-{imageType}-{UUID}.png
-```
-
-例：
-
-```text
-mojica-x-icon-550e8400-e29b-41d4-a716-446655440000.png
-```
-
-`imageType` は正規化された `ImageType` の値を使用し、ユーザー入力値はファイル名に含めない。
-
-Glyph Forge APIのレスポンスDTOから `GeneratedImage` への変換はInfrastructure境界で行う。Controllerは `GeneratedImage` をHTTPレスポンスへ変換する。
-
-## 12. ModelValidationError
+## 11. ModelValidationError
 
 Modelの生成または不変条件の検証に失敗した場合は、利用側がエラーを分類できるDomainエラーを返す。
 
@@ -233,13 +186,11 @@ Modelの生成または不変条件の検証に失敗した場合は、利用側
 | `reason` | `ModelValidationReason` として表現する機械的に判定できる失敗理由 |
 | `details` | 必要に応じた安全な補足情報 |
 
-`ModelValidationError` は日本語・英語の表示メッセージやHTTPステータスコードを持たない。`reason` は閉じた型である `ModelValidationReason` として表現する。
+`ModelValidationError` は表示メッセージを持たない。`reason` は閉じた型である `ModelValidationReason` として表現する。
 
 想定内の検証失敗は例外ではなく、`Result<T, ModelValidationError>` 相当の戻り値で扱う。予期しない実行時障害の例外処理はModelの責務外とする。
 
-ServiceまたはControllerが `ModelValidationError` を公開APIのエラー契約へ変換する。表示メッセージは `Accept-Language` に基づいて外側の層で解決する。
-
-## 13. Domainエラーの例
+## 12. Domainエラーの例
 
 | `code` | `target` | 発生条件 |
 | --- | --- | --- |
@@ -250,24 +201,7 @@ ServiceまたはControllerが `ModelValidationError` を公開APIのエラー契
 | `UNSUPPORTED_IMAGE_TYPE` | `type` | 定義されていない画像種類 |
 | `VISIBLE_CHARACTER_REQUIRED` | 文字属性の組み合わせ | 両方が空白文字のみ |
 
-公開APIの `VALIDATION_ERROR` やHTTP `422 Unprocessable Entity` への変換はController境界の責務とする。
-
-## 14. API DTOとの対応
-
-APIのJSON DTOとDomain Modelは同一の型として扱わない。
-
-| API DTO | Domain Model |
-| --- | --- |
-| `type: string` | `ImageType` |
-| `text: string` | `RenderText` |
-| `foregroundCharacter: string` | `PatternCharacter` |
-| `foregroundColor: string` | `HexColor` |
-| `backgroundCharacter: string` | `PatternCharacter` |
-| `backgroundColor: string` | `HexColor` |
-
-`Accept-Language` はDomain Modelへ渡さず、エラー表示のローカライズに必要な実行コンテキストとして外側の層で扱う。
-
-## 15. テスト契約
+## 13. テスト契約
 
 Modelは外部サービスやDBを使わずに検証できるようにする。
 
@@ -285,8 +219,6 @@ Modelは外部サービスやDBを使わずに検証できるようにする。
 - 有効な値から `ImageGenerationRequest` を生成できる
 - 不正な値を含む `ImageGenerationRequest` を生成できない
 
-テストはHTTPステータスコードやGlyph Forge APIの通信ではなく、Modelから観測できる値と検証結果を確認する。HTTP契約と外部API契約のテストは、それぞれController・Infrastructureの境界で行う。
-
-## 16. 決定事項
+## 14. 決定事項
 
 未決事項はない。文字数、生成画像のファイル名、検証失敗の表現は本書の定義に従う。

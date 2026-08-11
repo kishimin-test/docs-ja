@@ -31,7 +31,7 @@ ImageGenerationService
 HTTP Response
 ```
 
-Controllerは `ImageGenerationService` の契約だけを参照する。Glyph Forge APIのURL、HTTPクライアント、外部API DTO、データベースには依存しない。
+Controllerは `ImageGenerationService` の契約を利用して画像生成を実行する。
 
 ## 3. HTTPリクエスト
 
