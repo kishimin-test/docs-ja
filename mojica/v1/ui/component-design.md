@@ -4,7 +4,7 @@
 
 デザイン実装は**Tailwind CSS + shadcn/ui + Lucide**を採用する。shadcn/uiはRadix UIベースのコンポーネントをリポジトリへコピーして所有する方式であり、共通UIの実装パターンとして本書§1「コンポーネントカテゴリと配置」の`components/`層に組み込む。
 
-個々のコンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、採用パターン、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
+個々の自前コンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。ただし、`components/ui/`に置くshadcn/ui CLI生成物は既製primitiveの薄いラッパーであり、個別の設計判断を持たないため、コンポーネントごとの設計書は作成しない。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、採用パターン、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
 
 ---
 
@@ -154,7 +154,7 @@ frontend-architecture.mdの通り、404 Not Found画面（ui.md §2, §19）の�
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
-Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/ui/`のshadcn/ui primitiveを含め、`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。`*.stories.tsx`は`button.tsx`等の実装ファイルとは別ファイルであり、`shadcn add --overwrite`によるCLIの再生成では上書きされない。Storyでカバーする状態は各コンポーネントのファイル（[`components/`](./components/)配下）で定義する。
+Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/ui/`のshadcn/ui primitiveを含め、`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。`*.stories.tsx`は`button.tsx`等の実装ファイルとは別ファイルであり、`shadcn add --overwrite`によるCLIの再生成では上書きされない。Storyでカバーする状態は、自前コンポーネントでは各コンポーネントの設計書（[`components/`](./components/)配下）で定義する。`components/ui/`のshadcn/ui primitiveでは、shadcn/uiが公開するvariantと状態をStoryに直接反映する。
 
 shadcn/ui CLIのデフォルトのalias（`components.json`の`aliases.ui`は`@/components/ui`、`aliases.lib`は`@/lib`）をそのまま使用するため、`components.json`のカスタマイズは不要である。
 
@@ -187,7 +187,7 @@ shadcn/ui CLIのデフォルトのalias（`components.json`の`aliases.ui`は`@/
 # 4. i18n・アクセシビリティ・レスポンシブへの影響
 
 - **i18n**: すべての表示文言（label、button、select選択肢、クライアントバリデーションメッセージ）は翻訳関数経由で描画する。APIのエラーメッセージは`Accept-Language`に応じてサーバー側でローカライズ済みのため、`code`/`errors[].field`のみをUI側の判定に使用し、`message`はそのまま表示する（ui.md §13）。
-- **アクセシビリティ**: [`Select`](./components/Select.md)・[`LanguageSwitcher`](./components/LanguageSwitcher.md)はRadix UI（shadcn/uiの実装基盤）のprimitiveを利用するため、キーボード操作・フォーカス管理・ARIA属性は標準実装として得られる。ただし`aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、Lucideアイコンへの`aria-hidden="true"`（アイコン自体は装飾でありテキストラベルが意味を担うため）は個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
+- **アクセシビリティ**: shadcn/uiの`Select`と[`LanguageSwitcher`](./components/LanguageSwitcher.md)はRadix UI（shadcn/uiの実装基盤）のprimitiveを利用するため、キーボード操作・フォーカス管理・ARIA属性は標準実装として得られる。ただし`aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、Lucideアイコンへの`aria-hidden="true"`（アイコン自体は装飾でありテキストラベルが意味を担うため）は個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
 - **レスポンシブ**: フォームは1カラムを基本とし、最大幅設定と中央配置は[`ImageGenerationScreen`](./components/ImageGenerationScreen.md)（ページコンテナ）が担当する。各共通UIコンポーネントは`w-full`を基本とし、横スクロールが発生しないようにする（ui.md §14）。
 
 ---

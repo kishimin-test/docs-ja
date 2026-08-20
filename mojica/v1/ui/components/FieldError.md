@@ -1,0 +1,17 @@
+# FieldError
+
+- レイヤー: 共通UI
+- 配置: `components/FieldError/FieldError.tsx`
+- 実装基盤: Tailwindのみで実装（Radix依存なし）
+- 責務: 1件のエラーメッセージ表示。空の場合は何も描画しない
+
+## Storybook
+
+| 主なStory状態 | 検証観点 |
+| --- | --- |
+| Default（メッセージあり）／Empty（メッセージなしで何も描画しない） | 空文字列時にDOMへ描画されないことの確認 |
+
+## テスト
+
+- サイズ: Small
+- 検証内容: props駆動の表示・状態遷移
