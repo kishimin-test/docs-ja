@@ -4,7 +4,7 @@
 
 デザイン実装は**Tailwind CSS + shadcn/ui + Lucide**を採用する。shadcn/uiはRadix UIベースのコンポーネントをリポジトリへコピーして所有する方式であり、共通UIの実装パターンとして本書§1「コンポーネントカテゴリと配置」の`components/`層に組み込む。
 
-個々の自前コンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。ただし、`components/ui/`に置くshadcn/ui CLI生成物は既製primitiveの薄いラッパーであり、個別の設計判断を持たないため、コンポーネントごとの設計書は作成しない。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、採用パターン、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
+個々の自前コンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。`components/ui/`に置くshadcn/uiのラッパーは個別の設計書を作らず、共通する設計だけを[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)にまとめる。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、採用パターン、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
 
 ---
 
@@ -154,17 +154,9 @@ frontend-architecture.mdの通り、404 Not Found画面（ui.md §2, §19）の�
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
-Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/ui/`のshadcn/ui primitiveを含め、`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。`*.stories.tsx`は`button.tsx`等の実装ファイルとは別ファイルであり、`shadcn add --overwrite`によるCLIの再生成では上書きされない。Storyでカバーする状態は、自前コンポーネントでは各コンポーネントの設計書（[`components/`](./components/)配下）で定義する。`components/ui/`のshadcn/ui primitiveでは、shadcn/uiが公開するvariantと状態をStoryに直接反映する。
+Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/ui/`のshadcn/ui primitiveを含め、`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。自前コンポーネントでカバーする状態は各コンポーネントの設計書（[`components/`](./components/)配下）で定義する。shadcn/uiラッパーの共通方針は[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)に従う。
 
-shadcn/ui CLIのデフォルトのalias（`components.json`の`aliases.ui`は`@/components/ui`、`aliases.lib`は`@/lib`）をそのまま使用するため、`components.json`のカスタマイズは不要である。
-
-`components/ui/`はshadcn/ui CLIが生成・上書きするvendorレイヤーであり、ファイル名はプロジェクトのPascalCase規則ではなくshadcn/ui標準のkebab-case（例: `button.tsx`、`button.stories.tsx`）をそのまま用いる。`ui/`配下のコンポーネント本体（`button.tsx`等）は**一切手動編集しない**（`*.stories.tsx`はCLIが生成しない自作ファイルのため、この制約を受けない）。カスタマイズは次の方法で行い、`ui/`配下を編集する必要が生じないようにする。
-
-- 色: [design-tokens.md](./design-tokens.md)のCSS変数を変更する（`ui/`のクラスは`bg-primary`等のトークン参照のまま）
-- 個別インスタンスの見た目調整: `components/`直下の自前コンポーネント（`TextField`等）から`className` propを渡す（`cn()`＝clsx + tailwind-mergeにより末尾のクラスが優先される）
-- Tailwindのスケール全体の変更: `tailwind.config`の`extend`で対応する
-
-構造的な変更や合成自体は、従来通り`components/`直下の自前コンポーネント側で行う。
+shadcn/uiラッパーの配置、所有境界、カスタマイズ、Storybook、テストに共通する設計は[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)に定義する。
 
 ---
 
