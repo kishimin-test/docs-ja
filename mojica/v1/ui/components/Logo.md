@@ -1,0 +1,19 @@
+# Logo
+
+- レイヤー: 共通UI
+- 配置: `components/Logo/Logo.tsx`
+- 実装基盤: 角丸スクエアのシンボル（`aria-hidden="true"`）+ 「mojica」ワードマークテキスト
+- 責務: ロゴ。`<img>`は使用せず、可視テキストがアクセシブルネームを担う
+
+シンボル部分は`aria-hidden="true"`とし、可視テキスト「mojica」がアクセシブルネームを担う（ui.md §15）。
+
+## Storybook
+
+| 主なStory状態 | 検証観点 |
+| --- | --- |
+| Default | 可視テキスト「mojica」がアクセシブルネームを担うことの確認 |
+
+## テスト
+
+- サイズ: Small
+- 検証内容: props駆動の表示
