@@ -2,9 +2,9 @@
 
 本書は[ui.md](./ui.md)の画面仕様を実現するためのフロントエンドコンポーネント設計を示す。API契約は[api.md](../api/api.md)に従う。
 
-デザイン実装は**Tailwind CSS + shadcn/ui + Lucide**を使用する。shadcn/uiはRadix UIベースのコンポーネントをリポジトリへコピーして所有し、本書§1「コンポーネントカテゴリと配置」の`components/`層に組み込む。
+実装は**React + TypeScript + Vite**を使用する。サーバー状態は**TanStack Query**、HTTP通信は**Axios**、入力スキーマは**Zod**で扱う。APIクライアントと型は**Orval**から生成する。
 
-個々の自前コンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。`components/ui/`に置くshadcn/uiのラッパーは個別の設計書を作らず、共通する設計だけを[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)にまとめる。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、採用パターン、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
+個々の自前コンポーネントの責務・Props・Storybookの状態・テスト対象は[`components/`](./components/)配下のコンポーネントごとのファイルに分けて記載する。本書には特定の1コンポーネントに紐づかない横断的な内容（コンポーネントカテゴリと配置、状態モデル、非同期境界、i18n・アクセシビリティ・レスポンシブ、既存API契約への影響、テスト方針）のみを記載する。
 
 ---
 
@@ -13,10 +13,10 @@
 | レイヤー                      | 責務                                                                  | 依存してよいもの                                              | 配置先                       |
 | ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------- |
 | 共通UI（Common components）   | 表示とアクセシビリティのみ。ネイティブHTML要素のprops/eventを拡張する | なし（グローバル状態・ルーティング・fetchを直接importしない） | `components/`                |
-| アプリシェル（App shell）     | ロケール状態など横断的な状態を共通UIへ橋渡しするラッパー              | i18nフック（`useTranslations`/`useLocale`など）               | `app/components/`            |
+| アプリシェル（App shell）     | ロケール状態など横断的な状態を共通UIへ橋渡しするラッパー              | React Contextなどのアプリ状態                                  | `app/components/`            |
 | 機能UI（Business components） | mojica APIへの送信、クライアントバリデーション、ダウンロード処理      | フォーム状態、`POST /images`呼び出し                          | `features/image-generation/` |
 
-`AppHeader`・`AppFooter`は「アプリシェル」として`app/components/`直下に置く。`components/`配下（`TextField`、`Select`等）はi18nフックを含め一切のHooks依存を持たない。
+`AppHeader`・`AppFooter`は「アプリシェル」として`app/components/`直下に置く。`components/`配下（`TextField`、`Select`等）はアプリ状態やデータ取得への依存を持たない。
 
 テストコードは`*.stories.tsx`と同様、対象の実装ファイルと同じディレクトリへcolocateする（ファイル名規約`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`を使用し、独立した`tests/`フォルダへ集約しない）。
 
@@ -40,11 +40,11 @@ src/
 │   │   ├── AppProviders.tsx     # ErrorBoundary（最外周）→ QueryClientProvider → I18nProviderの順で組み立てるワイヤリング
 │   │   └── AppProviders.small.test.tsx  # ErrorBoundaryのfallback表示・Provider配下でのレンダリングを検証
 │   └── views/
-│       ├── App.tsx              # AppProvidersでRouterProvider（lib/router.tsのrouter）をラップするルートView
+│       ├── App.tsx              # AppProvidersでアプリ全体をラップするルートView
 │       ├── App.small.test.tsx   # 描画経路のみ（フォーム送信はシミュレートしない）
 │       └── App.medium.test.tsx  # MSWで実際にPOST /imagesを発火させ、Provider配線からダウンロードまでを一気通貫で検証
 ├── components/
-│   ├── ui/                      # shadcn/ui CLIが生成するprimitive（Radix UIベース）
+│   ├── ui/                      # アプリ共通のUI primitive
 │   │   ├── button.tsx
 │   │   ├── button.stories.tsx
 │   │   ├── input.tsx
@@ -87,7 +87,7 @@ src/
 │   │   │   ├── ImageGenerationForm/
 │   │   │   │   ├── ImageGenerationForm.tsx
 │   │   │   │   ├── ImageGenerationForm.stories.tsx
-│   │   │   │   └── ImageGenerationForm.medium.test.tsx    # MSW（Orval生成フックが内部で呼ぶfetch）で入力→送信→成功/各エラーを検証
+│   │   │   │   └── ImageGenerationForm.medium.test.tsx    # MSW（Axios経由のAPI通信）で入力→送信→成功/各エラーを検証
 │   │   │   ├── ImageTypeSelect/              # 共通Select（ui/select）をラップ
 │   │   │   │   ├── ImageTypeSelect.tsx
 │   │   │   │   ├── ImageTypeSelect.stories.tsx
@@ -101,10 +101,10 @@ src/
 │   │   │       ├── ApiErrorBanner.stories.tsx
 │   │   │       └── ApiErrorBanner.small.test.tsx
 │   │   ├── hooks/
-│   │   │   ├── useImageGenerationForm.ts   # React Hook Form（useForm + zodResolver）による入力値・クライアントバリデーション
+│   │   │   ├── useImageGenerationForm.ts   # Reactのフォーム状態とZodによる入力値・クライアントバリデーション
 │   │   │   └── useImageGenerationForm.small.test.ts
 │   │   ├── schemas/
-│   │   │   ├── imageGenerationSchema.ts    # Zodスキーマ。React Hook Formのresolverとして使用する
+│   │   │   ├── imageGenerationSchema.ts    # Zodスキーマによる入力値検証
 │   │   │   └── imageGenerationSchema.small.test.ts
 │   │   └── views/
 │   │       ├── ImageGenerationScreen.tsx    # ページ本体。ImageGenerationFormを描画する（AppHeader/AppFooterはapp/components/Layoutが担う）
@@ -124,16 +124,16 @@ src/
 │   └── api/                     # OrvalがmojicaのOpenAPIスペックから生成するTanStack Queryフック・型。手動編集禁止
 │       └── images.ts            # 例: POST /imagesに対応するミューテーションフック（実際のファイル名・フック名はOpenAPIスペックのoperationIdに従う。未確定）
 ├── lib/
-│   ├── utils.ts                 # cn()（clsx + tailwind-merge）。shadcn/ui CLIが生成する
+│   ├── api.ts                   # Orval生成APIクライアントの設定
 │   ├── queryClient.ts           # TanStack QueryのQueryClientインスタンス初期化設定
-│   └── router.ts                # TanStack RouterのcreateRouter({ routeTree })によるrouterインスタンス初期化設定
+│   └── queryClient.ts           # TanStack QueryのQueryClientインスタンス初期化設定
 ├── providers/
 │   └── I18nProvider.tsx         # i18n実装本体。AppHeader/AppFooterが使うuseTranslations/useLocaleを提供する。localStorageのキー"locale"でロケールを永続化する
-└── routes/                      # TanStack Routerのfile-based routing対象ディレクトリ
+└── routes/                      # Viteアプリの画面ルート
     ├── __root.tsx                # createRootRouteでLayoutをcomponentに、NotFoundViewをnotFoundComponentに指定する
-    ├── __root.small.test.tsx     # ルーター境界でのナビゲーション検証（routeTree.gen.tsから作った本番同等のrouterを使用）
+    ├── __root.small.test.tsx     # ルート境界でのナビゲーション検証
     ├── index.tsx                 # createFileRoute("/")でImageGenerationScreenを描画する
-    └── routeTree.gen.ts          # `@tanstack/router-plugin/vite`が自動生成するルートツリー。手動編集禁止
+    └── routeTree.gen.ts          # ルート定義
 ```
 
 `components/`配下は`features/`・`app/`からのグローバル状態・ルーティング・データ取得フックのimportを禁止する。
@@ -144,23 +144,21 @@ src/
 
 `ErrorFallback`は`Layout`の`<Outlet />`を経由せず、アプリのルート（`app/providers/AppProviders.tsx`の`ErrorBoundary`）から直接描画される。`AppHeader`/`AppFooter`ごと置き換わるため、ルーティングの仕組み（`routes/__root.tsx`）には組み込まれない。
 
-frontend-architecture.mdの通り、404 Not Found画面（ui.md §2, §19）のためにTanStack Routerを導入する。file-based routingを採用し、`routes/`配下のファイルからVite plugin（`@tanstack/router-plugin/vite`）が`routes/routeTree.gen.ts`を自動生成する（手動編集禁止）。`routes/__root.tsx`は`createRootRoute`で`component`に`app/components/Layout.tsx`（`AppHeader` + `<Outlet />` + `AppFooter`）を、`notFoundComponent`に`NotFoundView`を指定する。`routes/index.tsx`は`createFileRoute("/")`で`ImageGenerationScreen`を`component`に指定する。これにより`ImageGenerationScreen`・`NotFoundView`自身はヘッダー・フッターを持たず、画面固有のコンテンツのみを描画する。
+404 Not Found画面（ui.md §2, §19）はViteアプリのルート解決で処理する。`routes/`配下では画面コンポーネントを定義し、`ImageGenerationScreen`・`NotFoundView`自身はヘッダー・フッターを持たず、画面固有のコンテンツのみを描画する。
 
-`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`で`RouterProvider`（`lib/router.ts`の`router`。`createRouter({ routeTree })`で`routes/routeTree.gen.ts`から生成）をラップする。`app/views/App.small.test.tsx`は`App`を対象に、ui.md §8の画像生成フロー（入力 → 生成 → 自動ダウンロード）の描画経路のみを検証し、フォーム送信はシミュレートしない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は個別コンポーネントのテストへ持ち込まず、ルーター境界である`routes/__root.small.test.tsx`に集約する。
+`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、ui.md §8の画像生成フロー（入力 → 生成 → 自動ダウンロード）の描画経路のみを検証し、フォーム送信はシミュレートしない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
 
-`app/views/App.medium.test.tsx`は`App`をエントリポイントとしてMSWで`POST /images`をモックし、`QueryClientProvider`・`I18nProvider`・`RouterProvider`・`Layout`までを含めて、入力→送信→成功／エラーを一気通貫で検証する。
+`app/views/App.medium.test.tsx`は`App`をエントリポイントとしてMSWで`POST /images`をモックし、`QueryClientProvider`・`I18nProvider`・`Layout`までを含めて、入力→送信→成功／エラーを一気通貫で検証する。
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
-Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/ui/`のshadcn/ui primitiveを含め、`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。自前コンポーネントでカバーする状態は各コンポーネントの設計書（[`components/`](./components/)配下）で定義する。shadcn/uiラッパーの共通方針は[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)に従う。
-
-shadcn/uiラッパーの配置、所有境界、カスタマイズ、Storybook、テストに共通する設計は[`ShadcnUiWrappers.md`](./components/ShadcnUiWrappers.md)に定義する。
+Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへcolocateする（CSF 3.0のcolocationパターン）。`components/`・`features/`配下のすべてのコンポーネント・ViewでStoryを作成する。自前コンポーネントでカバーする状態は各コンポーネントの設計書（[`components/`](./components/)配下）で定義する。
 
 ---
 
 # 2. 状態モデル
 
-送信状態（送信中・成功・失敗）は、`gen/api/`のOrval生成ミューテーションフック（TanStack Query `useMutation`）が返す`isPending`/`isError`/`isSuccess`/`error`をそのまま[`ImageGenerationForm`](./components/ImageGenerationForm.md)で使用する。
+送信状態（送信中・成功・失敗）は、`gen/api/`のOrval生成ミューテーションフック（TanStack Query `useMutation`）が返す`isPending`/`isError`/`isSuccess`/`error`をそのまま[`ImageGenerationForm`](./components/ImageGenerationForm.md)で使用する。フォーム入力の検証にはZodスキーマを使用する。
 
 個々のバリデーション・エラーマッピング・ダウンロードの具体的な流れは[`ImageGenerationForm`](./components/ImageGenerationForm.md)を参照。
 
@@ -177,7 +175,7 @@ shadcn/uiラッパーの配置、所有境界、カスタマイズ、Storybook�
 # 4. i18n・アクセシビリティ・レスポンシブへの影響
 
 - **i18n**: すべての表示文言（label、button、select選択肢、クライアントバリデーションメッセージ）は翻訳関数経由で描画する。APIのエラーメッセージは`Accept-Language`に応じてサーバー側でローカライズ済みのため、`code`/`errors[].field`のみをUI側の判定に使用し、`message`はそのまま表示する（ui.md §13）。
-- **アクセシビリティ**: shadcn/uiの`Select`と[`LanguageSwitcher`](./components/LanguageSwitcher.md)はRadix UI（shadcn/uiの実装基盤）のprimitiveを利用するため、キーボード操作・フォーカス管理・ARIA属性は標準実装として得られる。ただし`aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、Lucideアイコンへの`aria-hidden="true"`（アイコン自体は装飾でありテキストラベルが意味を担うため）は個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
+- **アクセシビリティ**: `aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、装飾アイコンへの`aria-hidden="true"`を個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
 - **レスポンシブ**: フォームは1カラムを基本とし、最大幅設定と中央配置は[`ImageGenerationScreen`](./components/ImageGenerationScreen.md)（ページコンテナ）が担当する。各共通UIコンポーネントは`w-full`を基本とし、横スクロールが発生しないようにする（ui.md §14）。
 
 ---
