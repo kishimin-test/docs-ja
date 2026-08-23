@@ -42,7 +42,7 @@ src/
 │   └── views/
 │       ├── App.tsx              # AppProvidersでアプリ全体をラップするルートView
 │       ├── App.small.test.tsx   # 描画経路のみ（フォーム送信はシミュレートしない）
-│       └── App.medium.test.tsx  # MSWで実際にPOST /imagesを発火させ、Provider配線からダウンロードまでを一気通貫で検証
+│       └── App.large.test.tsx   # 外部サービス相当のPOST /imagesを発火させ、Provider配線からダウンロードまでを一気通貫で検証
 ├── components/
 │   ├── ui/                      # アプリ共通のUI primitive
 │   │   ├── button.tsx
@@ -87,7 +87,7 @@ src/
 │   │   │   ├── ImageGenerationForm/
 │   │   │   │   ├── ImageGenerationForm.tsx
 │   │   │   │   ├── ImageGenerationForm.stories.tsx
-│   │   │   │   └── ImageGenerationForm.medium.test.tsx    # MSW（Axios経由のAPI通信）で入力→送信→成功/各エラーを検証
+│   │   │   │   └── ImageGenerationForm.large.test.tsx     # 外部サービス相当のAxios通信で入力→送信→成功/各エラーを検証
 │   │   │   ├── ImageTypeSelect/              # 共通Select（ui/select）をラップ
 │   │   │   │   ├── ImageTypeSelect.tsx
 │   │   │   │   ├── ImageTypeSelect.stories.tsx
@@ -148,7 +148,7 @@ src/
 
 `app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、ui.md §8の画像生成フロー（入力 → 生成 → 自動ダウンロード）の描画経路のみを検証し、フォーム送信はシミュレートしない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
 
-`app/views/App.medium.test.tsx`は`App`をエントリポイントとしてMSWで`POST /images`をモックし、`QueryClientProvider`・`I18nProvider`・`Layout`までを含めて、入力→送信→成功／エラーを一気通貫で検証する。
+`app/views/App.large.test.tsx`は`App`をエントリポイントとして外部サービス相当の`POST /images`を実行し、`QueryClientProvider`・`I18nProvider`・`Layout`までを含めて、入力→送信→成功／エラー／自動ダウンロードを一気通貫で検証する。
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
