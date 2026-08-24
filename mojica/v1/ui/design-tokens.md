@@ -75,28 +75,28 @@ Material Design 3のコンポーネント形状に合わせ、Figma実測値を�
 
 # 4. スペーシング
 
-Figma上で使われている値（px）。Material 3の4dp基準を参照しつつ、画面仕様で定義された実測値を使用する。
+Material 3の4dpグリッドをスペーシングの基準とし、Web実装では1dpを1pxとして扱う。padding・gap・要素の高さは原則として4pxの倍数を使用する。Figmaの実測値が4pxの倍数でない場合は、その値を直接採用せず、視覚的な関係を維持できる最も近い基準値へ調整する。
 
 ## 主な値の一覧
 
-`6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 48, 56`
+`4, 8, 12, 16, 20, 24, 28, 32, 48, 56`
 
 ## 主要要素のpadding/gap/height
 
 | 要素                              | padding                                                           | gap                                    | height（Desktop）                      |
 | --------------------------------- | ----------------------------------------------------------------- | -------------------------------------- | -------------------------------------- |
-| ヘッダー                          | `0px 56px`（Desktop）／`0px 32px`（Tablet）／`0px 20px`（Mobile） | -                                      | 86px（Desktop/Tablet）／74px（Mobile） |
-| ロゴ（アイコン+文字）             | -                                                                 | 10px                                   | -                                      |
-| メインコンテンツ                  | `48px 0px 0px`（Desktop/Tablet）／`32px 0px 0px`（Mobile）        | 28px（Desktop/Tablet）／22px（Mobile） | -                                      |
-| Intro（見出し+説明文）            | -                                                                 | 10px                                   | -                                      |
-| フォームカード                    | 32px（Desktop）／`24px 20px`（Mobile）                            | 22px                                   | -                                      |
+| ヘッダー                          | `0px 56px`（Desktop）／`0px 32px`（Tablet）／`0px 20px`（Mobile） | -                                      | 88px（Desktop/Tablet）／72px（Mobile） |
+| ロゴ（アイコン+文字）             | -                                                                 | 12px                                   | -                                      |
+| メインコンテンツ                  | `48px 0px 0px`（Desktop/Tablet）／`32px 0px 0px`（Mobile）        | 28px（Desktop/Tablet）／24px（Mobile） | -                                      |
+| Intro（見出し+説明文）            | -                                                                 | 12px                                   | -                                      |
+| フォームカード                    | 32px（Desktop）／`24px 20px`（Mobile）                            | 24px                                   | -                                      |
 | フィールド1組（label/input/hint） | -                                                                 | 8px                                    | -                                      |
 | TextFieldの入力欄                 | `0px 16px`                                                        | 8px                                    | 48px                                   |
-| カラーピッカー                    | `0px 16px 0px 10px`                                               | 12px                                   | 56px                                   |
+| カラーピッカー                    | `0px 16px 0px 12px`                                               | 12px                                   | 56px                                   |
 | カラー見本（スウォッチ）          | -                                                                 | -                                      | 36×36                                  |
 | Select                            | `0px 16px`                                                        | -                                      | 48px                                   |
-| 画像生成ボタン                    | -                                                                 | -                                      | 54px                                   |
-| APIエラーバナー                   | `14px 16px`                                                       | 6px                                    | -                                      |
+| 画像生成ボタン                    | -                                                                 | -                                      | 56px                                   |
+| APIエラーバナー                   | `16px`                                                            | 8px                                    | -                                      |
 | フッター                          | -                                                                 | -                                      | 80px                                   |
 
 ---
