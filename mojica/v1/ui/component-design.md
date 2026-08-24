@@ -137,7 +137,7 @@ src/
 
 `components/`配下は`features/`・`app/`からのグローバル状態・ルーティング・データ取得フックのimportを禁止する。
 
-`I18nProvider`自体の実装は`providers/`に置き、`AppHeader`・`AppFooter`が使うロケール状態を提供する。ロケールは`localStorage`のキー`"locale"`（値は`"ja"`または`"en"`）に永続化する（frontend-architecture.md参照）。`QueryClient`インスタンス自体は`lib/queryClient.ts`に置く。`app/providers/AppProviders.tsx`は`ErrorBoundary`（アプリのルート、§3参照）を最外周に、その内側に`QueryClientProvider`（`gen/api/`のOrval生成フックが必要とする）・`I18nProvider`の順で組み立てる。`ErrorBoundary`を最外周に置くのは、`I18nProvider`や`QueryClientProvider`自体が例外の原因になった場合でも`ErrorFallback`（`features/error/views/`）を表示できるようにするためである。`ErrorFallback`は`I18nProvider`のReact Contextに依存せず、`localStorage`のキー`"locale"`を`I18nProvider`と同じ形式で直接読み取り、コンポーネント内に埋め込んだja/en辞書から表示文言を選択する（ui.md §20）。
+`I18nProvider`自体の実装は`providers/`に置き、`AppHeader`・`AppFooter`が使うロケール状態を提供する。ロケールは`localStorage`のキー`"locale"`へ永続化する（frontend-architecture.md参照）。`QueryClient`インスタンス自体は`lib/queryClient.ts`に置く。`app/providers/AppProviders.tsx`は`ErrorBoundary`（アプリのルート、§3参照）を最外周に、その内側に`QueryClientProvider`（`gen/api/`のOrval生成フックが必要とする）・`I18nProvider`の順で組み立てる。`ErrorBoundary`を最外周に置くのは、`I18nProvider`や`QueryClientProvider`自体が例外の原因になった場合でも`ErrorFallback`（`features/error/views/`）を表示できるようにするためである。`ErrorFallback`は`I18nProvider`のReact Contextに依存せず、コンポーネント内に埋め込んだ最小限の辞書から表示文言を選択する。対応ロケール型は辞書のキーから導出し、`localStorage`の保存値、ブラウザ言語、既定ロケール`ja`の順で解決する（ui.md §20）。新しい言語を追加する際は、`I18nProvider`と`ErrorFallback`の対応ロケールを一致させる。
 
 `NotFoundView`は`features/not-found/views/`に、`ErrorFallback`は`features/error/views/`に置く。`features/`配下には、404表示や予期しないエラー表示のような外部依存のない自己完結した画面も含める。
 
