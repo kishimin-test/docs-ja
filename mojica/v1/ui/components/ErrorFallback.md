@@ -22,12 +22,14 @@ API呼び出しやフォーム状態は持たないが、「featureそのもの�
 const messages = {
   ja: {
     heading: "エラーが発生しました",
-    description: "予期しない問題が発生しました。しばらくしてからページを再読み込みしてください。",
+    description:
+      "予期しない問題が発生しました。しばらくしてからページを再読み込みしてください。",
     button: "ページを再読み込み",
   },
   en: {
     heading: "An error occurred",
-    description: "Something unexpected happened. Please reload the page and try again.",
+    description:
+      "Something unexpected happened. Please reload the page and try again.",
     button: "Reload page",
   },
 } as const;
@@ -50,8 +52,8 @@ function getLocale(): "ja" | "en" {
 
 ## Storybook
 
-| 主なStory状態 | 検証観点 |
-| --- | --- |
+| 主なStory状態                                                                           | 検証観点                                                             |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Default（ja、`localStorage`未設定時のフォールバック）／en（`localStorage`に`en`を設定） | 見出し・説明文・ボタンの表示、`localStorage`の値に応じた言語切り替え |
 
 ## テスト

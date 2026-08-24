@@ -14,22 +14,22 @@ Figma上の色・数値は各フレームの塗り（fill）・線（stroke）�
 
 `background`・`foreground`・`muted-foreground`・`primary`・`primary-foreground`・`border`・`destructive`を共通トークンとして定義する。`surface`・`helper-foreground`・`border-accent`・`inverse`・`inverse-foreground`・`destructive-background`・`destructive-border`はこのプロジェクト固有のトークンとする。
 
-| トークン名（確定）       | HEX       | OKLCH                      | Material 3の役割                 | Figma上の用途                                                                              |
-| ------------------------ | --------- | -------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
-| `background`             | `#F2F9FC` | `oklch(0.978 0.008 225.1)` | `background`（既定）                                               | ページ全体の背景                                                                           |
-| `surface`                | `#FFFFFF` | `oklch(1.000 0.000 0)`     | `card`（既定に対応）                                               | ヘッダー・フッター・フォームカード・入力欄の背景                                           |
-| `foreground`             | `#1F1C1A` | `oklch(0.229 0.006 56.1)`  | `foreground`（既定）                                               | 見出し・ラベル・本文の主要テキスト色（`card-foreground`もこれと同値）                      |
-| `muted-foreground`       | `#6B635C` | `oklch(0.505 0.015 63.7)`  | `muted-foreground`（既定）                                         | 説明文（Intro）、言語切り替えのシェブロンアイコン                                          |
-| `helper-foreground`      | `#496978` | `oklch(0.502 0.044 228.7)` | 独自追加                                                           | 文字数ヒント（「1〜64文字」等）、フッターのコピーライト                                    |
-| `border`                 | `#DBD4C9` | `oklch(0.872 0.017 79.3)`  | `border`（既定）                                                   | 言語切り替え・未入力状態の入力欄の枠線                                                     |
-| `border-accent`          | `#BEDEEB` | `oklch(0.881 0.038 224.3)` | outline-variant                    | 入力欄・カラーピッカーの枠線（`Input / Empty`、`Select`）                                  |
-| `primary`                | `#7CC7E8` | `oklch(0.793 0.088 227.9)` | `primary`（既定）                                                  | 画像生成ボタンの背景（通常時）                                                             |
-| `primary-foreground`     | `#193A48` | `oklch(0.330 0.046 228.2)` | `primary-foreground`（既定）                                       | 画像生成ボタンのテキスト色（通常時）                                                       |
-| `inverse`                | `#211F1C` | `oklch(0.240 0.006 78.2)`  | 独自追加                                                           | ロゴのシンボル背景、Retryableバリアントのボタン背景、404の「トップページへ戻る」ボタン背景 |
-| `inverse-foreground`     | `#FFFFFF` | `oklch(1.000 0.000 0)`     | 独自追加                                                           | `inverse`背景上のテキスト色                                                                |
-| `destructive`            | `#C72929` | `oklch(0.541 0.194 26.7)`  | `destructive`（既定）                                              | クライアントバリデーションエラーの枠線・エラーメッセージ文字色                             |
-| `destructive-background` | `#FFF2F2` | `oklch(0.971 0.014 17.4)`  | 独自追加                                                           | APIエラーバナー（`ApiErrorBanner`）の背景                                                  |
-| `destructive-border`     | `#EB8C8C` | `oklch(0.740 0.116 20.2)`  | 独自追加                                                           | APIエラーバナーの枠線                                                                      |
+| トークン名（確定）       | HEX       | OKLCH                      | Material 3の役割             | Figma上の用途                                                                              |
+| ------------------------ | --------- | -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
+| `background`             | `#F2F9FC` | `oklch(0.978 0.008 225.1)` | `background`（既定）         | ページ全体の背景                                                                           |
+| `surface`                | `#FFFFFF` | `oklch(1.000 0.000 0)`     | `card`（既定に対応）         | ヘッダー・フッター・フォームカード・入力欄の背景                                           |
+| `foreground`             | `#1F1C1A` | `oklch(0.229 0.006 56.1)`  | `foreground`（既定）         | 見出し・ラベル・本文の主要テキスト色（`card-foreground`もこれと同値）                      |
+| `muted-foreground`       | `#6B635C` | `oklch(0.505 0.015 63.7)`  | `muted-foreground`（既定）   | 説明文（Intro）、言語切り替えのシェブロンアイコン                                          |
+| `helper-foreground`      | `#496978` | `oklch(0.502 0.044 228.7)` | 独自追加                     | 文字数ヒント（「1〜64文字」等）、フッターのコピーライト                                    |
+| `border`                 | `#DBD4C9` | `oklch(0.872 0.017 79.3)`  | `border`（既定）             | 言語切り替え・未入力状態の入力欄の枠線                                                     |
+| `border-accent`          | `#BEDEEB` | `oklch(0.881 0.038 224.3)` | outline-variant              | 入力欄・カラーピッカーの枠線（`Input / Empty`、`Select`）                                  |
+| `primary`                | `#7CC7E8` | `oklch(0.793 0.088 227.9)` | `primary`（既定）            | 画像生成ボタンの背景（通常時）                                                             |
+| `primary-foreground`     | `#193A48` | `oklch(0.330 0.046 228.2)` | `primary-foreground`（既定） | 画像生成ボタンのテキスト色（通常時）                                                       |
+| `inverse`                | `#211F1C` | `oklch(0.240 0.006 78.2)`  | 独自追加                     | ロゴのシンボル背景、Retryableバリアントのボタン背景、404の「トップページへ戻る」ボタン背景 |
+| `inverse-foreground`     | `#FFFFFF` | `oklch(1.000 0.000 0)`     | 独自追加                     | `inverse`背景上のテキスト色                                                                |
+| `destructive`            | `#C72929` | `oklch(0.541 0.194 26.7)`  | `destructive`（既定）        | クライアントバリデーションエラーの枠線・エラーメッセージ文字色                             |
+| `destructive-background` | `#FFF2F2` | `oklch(0.971 0.014 17.4)`  | 独自追加                     | APIエラーバナー（`ApiErrorBanner`）の背景                                                  |
+| `destructive-border`     | `#EB8C8C` | `oklch(0.740 0.116 20.2)`  | 独自追加                     | APIエラーバナーの枠線                                                                      |
 
 `ring`（フォーカスリング色）はFigma上に定義がなく未抽出（§9参照）。
 
@@ -64,12 +64,12 @@ Figma上の色・数値は各フレームの塗り（fill）・線（stroke）�
 
 Material Design 3のコンポーネント形状に合わせ、Figma実測値を用途別の固定トークンとして定義する。
 
-| トークン名（確定） | 値   | Material 3での用途                         | 用途                                                              |
-| ------------------ | ---- | ------------------------------------------- | ----------------------------------------------------------------- |
-| `radius-sm`        | 8px  | 小さなコンテナ・スウォッチ                 | カラーピッカーの色見本（スウォッチ）                              |
+| トークン名（確定） | 値   | Material 3での用途                             | 用途                                                              |
+| ------------------ | ---- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| `radius-sm`        | 8px  | 小さなコンテナ・スウォッチ                     | カラーピッカーの色見本（スウォッチ）                              |
 | `radius-md`        | 10px | テキストフィールド・アウトライン系コントロール | 入力欄・Select・言語切り替え・カラーピッカー・APIエラーバナーの枠 |
-| `radius-lg`        | 12px | ボタン・主要アクション                     | ロゴのシンボル、画像生成ボタン、404「トップページへ戻る」ボタン   |
-| `radius-xl`        | 18px | カード・大きなコンテナ                     | フォームカード                                                    |
+| `radius-lg`        | 12px | ボタン・主要アクション                         | ロゴのシンボル、画像生成ボタン、404「トップページへ戻る」ボタン   |
+| `radius-xl`        | 18px | カード・大きなコンテナ                         | フォームカード                                                    |
 
 ---
 
@@ -134,7 +134,7 @@ Material 3のコンパクト・ミディアム・エクスパンデッドの画�
   --md-sys-color-on-surface-variant: oklch(0.505 0.015 63.7);
   --md-sys-color-outline: oklch(0.872 0.017 79.3);
   --md-sys-color-primary: oklch(0.793 0.088 227.9);
-  --md-sys-color-on-primary: oklch(0.330 0.046 228.2);
+  --md-sys-color-on-primary: oklch(0.33 0.046 228.2);
   --md-sys-color-error: oklch(0.541 0.194 26.7);
   --md-sys-color-error-container: oklch(0.971 0.014 17.4);
   --md-sys-color-on-error-container: oklch(0.541 0.194 26.7);

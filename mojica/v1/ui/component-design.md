@@ -13,7 +13,7 @@
 | レイヤー                      | 責務                                                                  | 依存してよいもの                                              | 配置先                       |
 | ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------- |
 | 共通UI（Common components）   | 表示とアクセシビリティのみ。ネイティブHTML要素のprops/eventを拡張する | なし（グローバル状態・ルーティング・fetchを直接importしない） | `components/`                |
-| アプリシェル（App shell）     | ロケール状態など横断的な状態を共通UIへ橋渡しするラッパー              | React Contextなどのアプリ状態                                  | `app/components/`            |
+| アプリシェル（App shell）     | ロケール状態など横断的な状態を共通UIへ橋渡しするラッパー              | React Contextなどのアプリ状態                                 | `app/components/`            |
 | 機能UI（Business components） | mojica APIへの送信、クライアントバリデーション、ダウンロード処理      | フォーム状態、`POST /images`呼び出し                          | `features/image-generation/` |
 
 `AppHeader`・`AppFooter`は「アプリシェル」として`app/components/`直下に置く。`components/`配下（`TextField`、`Select`等）はアプリ状態やデータ取得への依存を持たない。
@@ -122,11 +122,10 @@ src/
 │           └── ErrorFallback.small.test.tsx
 ├── gen/
 │   └── api/                     # OrvalがmojicaのOpenAPIスペックから生成するTanStack Queryフック・型。手動編集禁止
-│       └── images.ts            # 例: POST /imagesに対応するミューテーションフック（実際のファイル名・フック名はOpenAPIスペックのoperationIdに従う。未確定）
+│       └── images.ts            # 例: POST /imagesに対応するミューテーションフック（実際のファイル名・フック名はOpenAPIスペックのoperationIdに従う。）
 ├── lib/
 │   ├── api.ts                   # Orval生成APIクライアントの設定
 │   ├── queryClient.ts           # TanStack QueryのQueryClientインスタンス初期化設定
-│   └── queryClient.ts           # TanStack QueryのQueryClientインスタンス初期化設定
 ├── providers/
 │   └── I18nProvider.tsx         # i18n実装本体。AppHeader/AppFooterが使うuseTranslations/useLocaleを提供する。localStorageのキー"locale"でロケールを永続化する
 └── routes/                      # Viteアプリの画面ルート
