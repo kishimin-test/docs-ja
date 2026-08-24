@@ -41,8 +41,7 @@ src/
 │   │   └── AppProviders.small.test.tsx  # ErrorBoundaryのfallback表示・Provider配下でのレンダリングを検証
 │   └── views/
 │       ├── App.tsx              # AppProvidersでアプリ全体をラップするルートView
-│       ├── App.small.test.tsx   # 描画経路のみ（フォーム送信はシミュレートしない）
-│       └── App.large.test.tsx   # 外部サービス相当のPOST /imagesを発火させ、Provider配線からダウンロードまでを一気通貫で検証
+│       └── App.small.test.tsx   # 描画経路と、MSWで制御したPOST /imagesによるProvider配線から成功／エラーまでを検証
 ├── components/
 │   ├── ui/                      # アプリ共通のUI primitive
 │   │   ├── button.tsx
@@ -145,9 +144,7 @@ src/
 
 404 Not Found画面（ui.md §2, §19）はViteアプリのルート解決で処理する。`routes/`配下では画面コンポーネントを定義し、`ImageGenerationScreen`・`NotFoundView`自身はヘッダー・フッターを持たず、画面固有のコンテンツのみを描画する。
 
-`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、ui.md §8の画像生成フロー（入力 → 生成 → 自動ダウンロード）の描画経路のみを検証し、フォーム送信はシミュレートしない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
-
-`app/views/App.large.test.tsx`は`App`をエントリポイントとして外部サービス相当の`POST /images`を実行し、`QueryClientProvider`・`I18nProvider`・`Layout`までを含めて、入力→送信→成功／エラー／自動ダウンロードを一気通貫で検証する。
+`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、描画経路と、MSWが実ネットワークへ出る前に同一プロセス内で捕捉する`POST /images`を使った入力→送信→成功／エラーを1ファイルで検証する。`QueryClientProvider`・`I18nProvider`・`Layout`までを含むが、複数モジュールの統合自体はサイズをMediumへ上げる条件ではない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
