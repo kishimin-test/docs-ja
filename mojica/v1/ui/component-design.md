@@ -181,7 +181,7 @@ Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへco
 
 # 5. 既存API契約への影響
 
-本設計はmojica APIのリクエスト/レスポンス契約（[api.md](../api/api.md)）を変更しない。`gen/api/`はこの契約に対応するOpenAPIスペックからOrvalが生成するため、リクエスト/レスポンスの型はapi.mdの変更に追従して再生成される。[`ImageTypeSelect`](./components/ImageTypeSelect.md)の選択肢とAPIの`type`値、`imageGenerationSchema`から`z.infer`した`ImageGenerationFormValues`のキーは、生成されたリクエスト型のフィールド名と一致させ、`errors[].field`を`setError`のフィールド名としてそのまま使用できるようにする。
+本設計はmojica APIのリクエスト/レスポンス契約（[api.md](../api/api.md)）を変更しない。`gen/api/`はこの契約に対応するOpenAPIスペックからOrvalが生成するため、リクエスト/レスポンスの型はapi.mdの変更に追従して再生成される。[`ImageTypeSelect`](./components/ImageTypeSelect.md)のPropsは、API値の文字列Unionを再定義せず、生成されたリクエスト型の`type`プロパティから導出する。選択肢の値一覧は、Orvalが列挙値の実行時オブジェクトを生成する場合はその生成物から作り、型だけを生成する場合は生成型による静的検査を必須とする。「標準画像」などの表示ラベルはOpenAPI生成物ではなく、API値をキーとしてi18nの翻訳辞書から取得する。`imageGenerationSchema`から`z.infer`した`ImageGenerationFormValues`のキーは、生成されたリクエスト型のフィールド名と一致させ、`errors[].field`を`setError`のフィールド名としてそのまま使用できるようにする。
 
 ---
 
