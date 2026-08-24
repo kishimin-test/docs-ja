@@ -19,8 +19,8 @@ type TextFieldProps = React.ComponentPropsWithoutRef<"input"> & {
 
 ## Storybook
 
-| 主なStory状態 | 検証観点 |
-| --- | --- |
+| 主なStory状態                                                    | 検証観点                                                                         |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Default／Filled／Error（バリデーションメッセージ付き）／Disabled | `getByLabelText`でinputとlabelの関連付け、`aria-describedby`によるエラー関連付け |
 
 ## テスト

@@ -19,26 +19,26 @@ Modelは以下を担当する。
 
 ## 3. Domain Model一覧
 
-| Model | 種類 | 役割 |
-| --- | --- | --- |
+| Model                    | 種類                     | 役割                                           |
+| ------------------------ | ------------------------ | ---------------------------------------------- |
 | `ImageGenerationRequest` | Aggregate / Domain Model | 画像生成に必要な値をまとめ、不変条件を維持する |
-| `ImageType` | Enum / Value | 生成する画像の種類を表す |
-| `RenderText` | Value Object | 描画対象の文字列を表す |
-| `PatternCharacter` | Value Object | 描画または背景に使用する文字列を表す |
-| `HexColor` | Value Object | `#RRGGBB` 形式の色を表す |
-| `RgbColor` | Value Object | RGB形式の色を表す |
-| `GeneratedImage` | Domain Result | 生成された画像データを表す |
-| `ModelValidationError` | Domain Error | Modelの検証失敗を表す |
+| `ImageType`              | Enum / Value             | 生成する画像の種類を表す                       |
+| `RenderText`             | Value Object             | 描画対象の文字列を表す                         |
+| `PatternCharacter`       | Value Object             | 描画または背景に使用する文字列を表す           |
+| `HexColor`               | Value Object             | `#RRGGBB` 形式の色を表す                       |
+| `RgbColor`               | Value Object             | RGB形式の色を表す                              |
+| `GeneratedImage`         | Domain Result            | 生成された画像データを表す                     |
+| `ModelValidationError`   | Domain Error             | Modelの検証失敗を表す                          |
 
 ## 4. ImageType
 
 生成する画像の種類を、自由な文字列ではなく定義済みの値として表現する。
 
-| 値 | 説明 |
-| --- | --- |
-| `standard` | 標準画像 |
-| `x-background` | X背景画像 |
-| `x-icon` | Xアイコン画像 |
+| 値             | 説明          |
+| -------------- | ------------- |
+| `standard`     | 標準画像      |
+| `x-background` | X背景画像     |
+| `x-icon`       | Xアイコン画像 |
 
 `ImageType` は画像種別の値だけを表現し、外部システムの情報を保持しない。
 
@@ -70,9 +70,9 @@ Modelは以下を担当する。
 
 用途によって次の2種類を区別する。
 
-| 用途 | Domain上の意味 |
-| --- | --- |
-| `foregroundCharacter` | 描画に使用する文字 |
+| 用途                  | Domain上の意味                 |
+| --------------------- | ------------------------------ |
+| `foregroundCharacter` | 描画に使用する文字             |
 | `backgroundCharacter` | 描画文字の周囲に敷き詰める文字 |
 
 ### 共通制約
@@ -126,11 +126,11 @@ B: 180
 
 `RgbColor` は赤・緑・青の各成分を値として保持する。
 
-| 値 | 型 | 制約 |
-| --- | --- | --- |
-| `red` | 整数 | 0以上255以下 |
+| 値      | 型   | 制約         |
+| ------- | ---- | ------------ |
+| `red`   | 整数 | 0以上255以下 |
 | `green` | 整数 | 0以上255以下 |
-| `blue` | 整数 | 0以上255以下 |
+| `blue`  | 整数 | 0以上255以下 |
 
 `RgbColor` は、生成時に各成分の範囲を検証する。負数、255超過、小数、未設定値は生成できない。
 
@@ -140,14 +140,14 @@ B: 180
 
 ### 属性
 
-| 属性 | 型 | 必須 |
-| --- | --- | :---: |
-| `type` | `ImageType` | ○ |
-| `text` | `RenderText` | ○ |
-| `foregroundCharacter` | `PatternCharacter` | ○ |
-| `foregroundColor` | `HexColor` | ○ |
-| `backgroundCharacter` | `PatternCharacter` | ○ |
-| `backgroundColor` | `HexColor` | ○ |
+| 属性                  | 型                 | 必須 |
+| --------------------- | ------------------ | :--: |
+| `type`                | `ImageType`        |  ○   |
+| `text`                | `RenderText`       |  ○   |
+| `foregroundCharacter` | `PatternCharacter` |  ○   |
+| `foregroundColor`     | `HexColor`         |  ○   |
+| `backgroundCharacter` | `PatternCharacter` |  ○   |
+| `backgroundColor`     | `HexColor`         |  ○   |
 
 ### 不変条件
 
@@ -167,11 +167,11 @@ B: 180
 
 ### 属性
 
-| 属性 | 内容 |
-| --- | --- |
-| `content` | 画像のバイナリデータ |
-| `mediaType` | 画像のメディア形式 |
-| `fileName` | ダウンロード時に使用するファイル名 |
+| 属性        | 内容                               |
+| ----------- | ---------------------------------- |
+| `content`   | 画像のバイナリデータ               |
+| `mediaType` | 画像のメディア形式                 |
+| `fileName`  | ダウンロード時に使用するファイル名 |
 
 ## 11. ModelValidationError
 
@@ -179,12 +179,12 @@ Modelの生成または不変条件の検証に失敗した場合は、利用側
 
 ### 属性
 
-| 属性 | 内容 |
-| --- | --- |
-| `code` | 言語に依存しないエラーコード |
-| `target` | 問題のあるDomain属性または属性の組み合わせ |
-| `reason` | `ModelValidationReason` として表現する機械的に判定できる失敗理由 |
-| `details` | 必要に応じた安全な補足情報 |
+| 属性      | 内容                                                             |
+| --------- | ---------------------------------------------------------------- |
+| `code`    | 言語に依存しないエラーコード                                     |
+| `target`  | 問題のあるDomain属性または属性の組み合わせ                       |
+| `reason`  | `ModelValidationReason` として表現する機械的に判定できる失敗理由 |
+| `details` | 必要に応じた安全な補足情報                                       |
 
 `ModelValidationError` は表示メッセージを持たない。`reason` は閉じた型である `ModelValidationReason` として表現する。
 
@@ -192,14 +192,14 @@ Modelの生成または不変条件の検証に失敗した場合は、利用側
 
 ## 12. Domainエラーの例
 
-| `code` | `target` | 発生条件 |
-| --- | --- | --- |
-| `REQUIRED` | 属性名 | 必須値が存在しない |
-| `LENGTH_OUT_OF_RANGE` | 属性名 | 文字数が許容範囲外 |
-| `CONTROL_CHARACTER` | 属性名 | 制御文字を含む |
-| `INVALID_HEX_COLOR` | 色属性名 | `#RRGGBB` 形式ではない |
-| `UNSUPPORTED_IMAGE_TYPE` | `type` | 定義されていない画像種類 |
-| `VISIBLE_CHARACTER_REQUIRED` | 文字属性の組み合わせ | 両方が空白文字のみ |
+| `code`                       | `target`             | 発生条件                 |
+| ---------------------------- | -------------------- | ------------------------ |
+| `REQUIRED`                   | 属性名               | 必須値が存在しない       |
+| `LENGTH_OUT_OF_RANGE`        | 属性名               | 文字数が許容範囲外       |
+| `CONTROL_CHARACTER`          | 属性名               | 制御文字を含む           |
+| `INVALID_HEX_COLOR`          | 色属性名             | `#RRGGBB` 形式ではない   |
+| `UNSUPPORTED_IMAGE_TYPE`     | `type`               | 定義されていない画像種類 |
+| `VISIBLE_CHARACTER_REQUIRED` | 文字属性の組み合わせ | 両方が空白文字のみ       |
 
 ## 13. テスト契約
 

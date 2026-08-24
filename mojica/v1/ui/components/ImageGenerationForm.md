@@ -66,18 +66,18 @@ export type ImageGenerationFormValues = z.infer<typeof imageGenerationSchema>;
 
 ## Storybook
 
-| 主なStory状態 | 検証観点 |
-| --- | --- |
+| 主なStory状態                                                                                             | 検証観点                                                                                      |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Default（空）／Filled／ValidationError（Zodスキーマ由来）／ServerError（422の`setError`反映）／Submitting | クライアントバリデーション、`422`時のフィールドエラー反映、送信中の多重クリック防止（`play`） |
 
 `POST /images`はMSWの`http.post`でモックし、実APIへ接続しない。
 
 ## テスト
 
-| サイズ | 対象 | 検証内容 |
-| --- | --- | --- |
-| Small | `imageGenerationSchema.ts` | ui.md §11の各制約（必須・文字数上限・空白文字のみ禁止・制御文字禁止・文字の組み合わせ）を網羅 |
-| Small | `useImageGenerationForm.ts` | resolver配線・defaultValuesの確認 |
-| Medium | `ImageGenerationForm.tsx` | MSWで`POST /images`をモックし（Orval生成ミューテーションフックが内部で使う`fetch`をインターセプトする）、入力→送信→成功／422（`errors[].field`の`setError`反映）／400・429・500・502・504（[ApiErrorBanner](./ApiErrorBanner.md)表示）の一連を`userEvent`で検証する、この機能の中心的な統合テスト |
+| サイズ | 対象                        | 検証内容                                                                                                                                                                                                                                                                                          |
+| ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Small  | `imageGenerationSchema.ts`  | ui.md §11の各制約（必須・文字数上限・空白文字のみ禁止・制御文字禁止・文字の組み合わせ）を網羅                                                                                                                                                                                                     |
+| Small  | `useImageGenerationForm.ts` | resolver配線・defaultValuesの確認                                                                                                                                                                                                                                                                 |
+| Medium | `ImageGenerationForm.tsx`   | MSWで`POST /images`をモックし（Orval生成ミューテーションフックが内部で使う`fetch`をインターセプトする）、入力→送信→成功／422（`errors[].field`の`setError`反映）／400・429・500・502・504（[ApiErrorBanner](./ApiErrorBanner.md)表示）の一連を`userEvent`で検証する、この機能の中心的な統合テスト |
 
 `gen/api/`自体（Orvalが生成したミューテーションフックの実装）に個別のテストは作らない。生成コードは手動編集禁止であり、Orval自身が生成ロジックの正しさを保証する対象のため、二重にテストしない。`ImageGenerationForm.medium.test.tsx`が実際の使用経路として型・リクエスト・レスポンス処理を検証する。
