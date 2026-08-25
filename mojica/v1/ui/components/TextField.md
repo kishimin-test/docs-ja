@@ -21,7 +21,7 @@ type TextFieldProps = React.ComponentPropsWithoutRef<"input"> & {
 
 | 主なStory状態                                                    | 検証観点                                                                         |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Default／Filled／Error（バリデーションメッセージ付き）／Disabled | `getByLabelText`でinputとlabelの関連付け、`aria-describedby`によるエラー関連付け |
+| Default／Filled／Error（バリデーションメッセージ付き）／Disabled | `getByRole("textbox", { name: ラベル名 })`でラベル名を持つテキストボックスとして利用できること、エラーメッセージがアクセシブルな説明として関連付けられること |
 
 ## テスト
 
