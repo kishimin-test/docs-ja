@@ -22,6 +22,8 @@
 
 ```text
 src/
+├── assets/
+│   └── logo.svg                  # mojicaのロゴ画像
 ├── app/
 │   ├── components/
 │   │   ├── AppHeader/            # Logo + LanguageSwitcher を合成し、i18nフックへ接続する

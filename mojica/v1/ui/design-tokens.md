@@ -169,7 +169,6 @@ Material 3のコンパクト・ミディアム・エクスパンデッドの画�
   --text-base: 15px;
   --text-md: 16px;
   --text-lg: 18px;
-  --text-xl: 19px;
   --text-2xl: 22px;
   --text-3xl: 24px;
   --text-4xl: 26px;
