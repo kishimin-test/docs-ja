@@ -86,7 +86,7 @@ src/
 │   │   │   ├── ImageGenerationForm/
 │   │   │   │   ├── ImageGenerationForm.tsx
 │   │   │   │   ├── ImageGenerationForm.stories.tsx
-│   │   │   │   └── ImageGenerationForm.large.test.tsx     # 外部サービス相当のAxios通信で入力→送信→成功/各エラーを検証
+│   │   │   │   └── ImageGenerationForm.small.test.tsx     # 同一プロセス内のMSWで入力→送信→成功/各エラーを検証
 │   │   │   ├── ImageTypeSelect/              # 共通Select（ui/select）をラップ
 │   │   │   │   ├── ImageTypeSelect.tsx
 │   │   │   │   ├── ImageTypeSelect.stories.tsx
