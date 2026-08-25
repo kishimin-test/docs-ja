@@ -216,11 +216,13 @@ E2E（Playwright）もSmall/Medium/Largeのいずれかへ、実際の依存範�
 
 ## CI実行スケジュール
 
-| イベント                     | 実行するSmall/Medium/Large |
-| ---------------------------- | -------------------------- |
-| push (main)                  | Small                      |
-| pull_request                 | Small, Medium              |
-| schedule / workflow_dispatch | Small, Medium, Large       |
+| サイズ | 実行イベント                                                       |
+| ------ | ------------------------------------------------------------------ |
+| Small  | push、pull_request、nightly（schedule）、workflow_dispatch         |
+| Medium | pull_request、nightly（schedule）、workflow_dispatch               |
+| Large  | nightly（schedule）、workflow_dispatch                             |
+
+Smallはpushから、MediumはPull Requestから、Largeはnightlyまたは手動実行から対象に加える。各段階では、その段階までに対象となったサイズを累積して実行する。
 
 E2E専用の実行頻度ルールは設けない。個々のE2Eテストは、そのテストが分類されたサイズに応じたイベントで実行される。
 
