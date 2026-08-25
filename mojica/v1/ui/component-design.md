@@ -22,6 +22,8 @@
 
 ```text
 src/
+├── assets/
+│   └── logo.svg                  # mojicaのロゴ画像
 ├── app/
 │   ├── components/
 │   │   ├── AppHeader/            # Logo + LanguageSwitcher を合成し、i18nフックへ接続する
@@ -41,8 +43,7 @@ src/
 │   │   └── AppProviders.small.test.tsx  # ErrorBoundaryのfallback表示・Provider配下でのレンダリングを検証
 │   └── views/
 │       ├── App.tsx              # AppProvidersでアプリ全体をラップするルートView
-│       ├── App.small.test.tsx   # 描画経路のみ（フォーム送信はシミュレートしない）
-│       └── App.large.test.tsx   # 外部サービス相当のPOST /imagesを発火させ、Provider配線からダウンロードまでを一気通貫で検証
+│       └── App.small.test.tsx   # 描画経路と、MSWで制御したPOST /imagesによるProvider配線から成功／エラーまでを検証
 ├── components/
 │   ├── ui/                      # アプリ共通のUI primitive
 │   │   ├── button.tsx
@@ -87,22 +88,23 @@ src/
 │   │   │   ├── ImageGenerationForm/
 │   │   │   │   ├── ImageGenerationForm.tsx
 │   │   │   │   ├── ImageGenerationForm.stories.tsx
-│   │   │   │   └── ImageGenerationForm.large.test.tsx     # 外部サービス相当のAxios通信で入力→送信→成功/各エラーを検証
+│   │   │   │   └── ImageGenerationForm.small.test.tsx     # 同一プロセス内のMSWで入力→送信→成功/各エラーを検証
 │   │   │   ├── ImageTypeSelect/              # 共通Select（ui/select）をラップ
 │   │   │   │   ├── ImageTypeSelect.tsx
 │   │   │   │   ├── ImageTypeSelect.stories.tsx
 │   │   │   │   └── ImageTypeSelect.small.test.tsx
-│   │   │   ├── GenerateButton/                # 共通Button（ui/button）+ lucide-reactのLoader2
+│   │   │   └── GenerateButton/                # 共通Button（ui/button）+ lucide-reactのLoader2
 │   │   │   │   ├── GenerateButton.tsx
 │   │   │   │   ├── GenerateButton.stories.tsx
 │   │   │   │   └── GenerateButton.small.test.tsx
-│   │   │   └── ApiErrorBanner/
-│   │   │       ├── ApiErrorBanner.tsx
-│   │   │       ├── ApiErrorBanner.stories.tsx
-│   │   │       └── ApiErrorBanner.small.test.tsx
+│   │   ├── errors/
+│   │   │   ├── toImageGenerationErrorPresentation.ts      # APIのcodeを表示用の見出しへ変換
+│   │   │   └── toImageGenerationErrorPresentation.small.test.ts
 │   │   ├── hooks/
 │   │   │   ├── useImageGenerationForm.ts   # Reactのフォーム状態とZodによる入力値・クライアントバリデーション
-│   │   │   └── useImageGenerationForm.small.test.ts
+│   │   │   ├── useImageGenerationForm.small.test.ts
+│   │   │   ├── useRetryAfterCountdown.ts   # Retry-Afterを起点とする残り秒数とタイマー同期
+│   │   │   └── useRetryAfterCountdown.small.test.ts
 │   │   ├── schemas/
 │   │   │   ├── imageGenerationSchema.ts    # Zodスキーマによる入力値検証
 │   │   │   └── imageGenerationSchema.small.test.ts
@@ -137,7 +139,7 @@ src/
 
 `components/`配下は`features/`・`app/`からのグローバル状態・ルーティング・データ取得フックのimportを禁止する。
 
-`I18nProvider`自体の実装は`providers/`に置き、`AppHeader`・`AppFooter`が使うロケール状態を提供する。ロケールは`localStorage`のキー`"locale"`（値は`"ja"`または`"en"`）に永続化する（frontend-architecture.md参照）。`QueryClient`インスタンス自体は`lib/queryClient.ts`に置く。`app/providers/AppProviders.tsx`は`ErrorBoundary`（アプリのルート、§3参照）を最外周に、その内側に`QueryClientProvider`（`gen/api/`のOrval生成フックが必要とする）・`I18nProvider`の順で組み立てる。`ErrorBoundary`を最外周に置くのは、`I18nProvider`や`QueryClientProvider`自体が例外の原因になった場合でも`ErrorFallback`（`features/error/views/`）を表示できるようにするためである。`ErrorFallback`は`I18nProvider`のReact Contextに依存せず、`localStorage`のキー`"locale"`を`I18nProvider`と同じ形式で直接読み取り、コンポーネント内に埋め込んだja/en辞書から表示文言を選択する（ui.md §20）。
+`I18nProvider`自体の実装は`providers/`に置き、`AppHeader`・`AppFooter`が使うロケール状態を提供する。ロケールは`localStorage`のキー`"locale"`へ永続化する（frontend-architecture.md参照）。`QueryClient`インスタンス自体は`lib/queryClient.ts`に置く。`app/providers/AppProviders.tsx`は`ErrorBoundary`（アプリのルート、§3参照）を最外周に、その内側に`QueryClientProvider`（`gen/api/`のOrval生成フックが必要とする）・`I18nProvider`の順で組み立てる。`ErrorBoundary`を最外周に置くのは、`I18nProvider`や`QueryClientProvider`自体が例外の原因になった場合でも`ErrorFallback`（`features/error/views/`）を表示できるようにするためである。`ErrorFallback`は`I18nProvider`のReact Contextに依存せず、コンポーネント内に埋め込んだ最小限の辞書から表示文言を選択する。対応ロケール型は辞書のキーから導出し、`localStorage`の保存値、ブラウザ言語、既定ロケール`ja`の順で解決する（ui.md §20）。新しい言語を追加する際は、`I18nProvider`と`ErrorFallback`の対応ロケールを一致させる。
 
 `NotFoundView`は`features/not-found/views/`に、`ErrorFallback`は`features/error/views/`に置く。`features/`配下には、404表示や予期しないエラー表示のような外部依存のない自己完結した画面も含める。
 
@@ -145,9 +147,7 @@ src/
 
 404 Not Found画面（ui.md §2, §19）はViteアプリのルート解決で処理する。`routes/`配下では画面コンポーネントを定義し、`ImageGenerationScreen`・`NotFoundView`自身はヘッダー・フッターを持たず、画面固有のコンテンツのみを描画する。
 
-`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、ui.md §8の画像生成フロー（入力 → 生成 → 自動ダウンロード）の描画経路のみを検証し、フォーム送信はシミュレートしない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
-
-`app/views/App.large.test.tsx`は`App`をエントリポイントとして外部サービス相当の`POST /images`を実行し、`QueryClientProvider`・`I18nProvider`・`Layout`までを含めて、入力→送信→成功／エラー／自動ダウンロードを一気通貫で検証する。
+`app/views/App.tsx`はエントリポイント（`main.tsx`）から描画されるルートViewであり、`AppProviders`でアプリ全体をラップする。`app/views/App.small.test.tsx`は`App`を対象に、描画経路と、MSWが実ネットワークへ出る前に同一プロセス内で捕捉する`POST /images`を使った入力→送信→成功／エラーを1ファイルで検証する。`QueryClientProvider`・`I18nProvider`・`Layout`までを含むが、複数モジュールの統合自体はサイズをMediumへ上げる条件ではない。ルート間のナビゲーション（存在しないパスで404画面が表示されること）は`routes/__root.small.test.tsx`に集約する。
 
 テストサイズの分類・命名規則（`.small.test.ts(x)`/`.medium.test.ts(x)`/`.large.test.ts(x)`）と、Playwrightを含むE2Eの扱いは本書§6「テスト項目・残存リスク」で定義する。
 
@@ -174,14 +174,14 @@ Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへco
 # 4. i18n・アクセシビリティ・レスポンシブへの影響
 
 - **i18n**: すべての表示文言（label、button、select選択肢、クライアントバリデーションメッセージ）は翻訳関数経由で描画する。APIのエラーメッセージは`Accept-Language`に応じてサーバー側でローカライズ済みのため、`code`/`errors[].field`のみをUI側の判定に使用し、`message`はそのまま表示する（ui.md §13）。
-- **アクセシビリティ**: `aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、装飾アイコンへの`aria-hidden="true"`を個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
+- **アクセシビリティ**: `aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ワードマークと重複するロゴ画像の空`alt`、装飾アイコンへの`aria-hidden="true"`を個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
 - **レスポンシブ**: フォームは1カラムを基本とし、最大幅設定と中央配置は[`ImageGenerationScreen`](./components/ImageGenerationScreen.md)（ページコンテナ）が担当する。各共通UIコンポーネントは`w-full`を基本とし、横スクロールが発生しないようにする（ui.md §14）。
 
 ---
 
 # 5. 既存API契約への影響
 
-本設計はmojica APIのリクエスト/レスポンス契約（[api.md](../api/api.md)）を変更しない。`gen/api/`はこの契約に対応するOpenAPIスペックからOrvalが生成するため、リクエスト/レスポンスの型はapi.mdの変更に追従して再生成される。[`ImageTypeSelect`](./components/ImageTypeSelect.md)の選択肢とAPIの`type`値、`imageGenerationSchema`から`z.infer`した`ImageGenerationFormValues`のキーは、生成されたリクエスト型のフィールド名と一致させ、`errors[].field`を`setError`のフィールド名としてそのまま使用できるようにする。
+本設計はmojica APIのリクエスト/レスポンス契約（[api.md](../api/api.md)）を変更しない。`gen/api/`はこの契約に対応するOpenAPIスペックからOrvalが生成するため、リクエスト/レスポンスの型はapi.mdの変更に追従して再生成される。[`ImageTypeSelect`](./components/ImageTypeSelect.md)のPropsは、API値の文字列Unionを再定義せず、生成されたリクエスト型の`type`プロパティから導出する。選択肢の値一覧は、Orvalが列挙値の実行時オブジェクトを生成する場合はその生成物から作り、型だけを生成する場合は生成型による静的検査を必須とする。「標準画像」などの表示ラベルはOpenAPI生成物ではなく、API値をキーとしてi18nの翻訳辞書から取得する。`imageGenerationSchema`から`z.infer`した`ImageGenerationFormValues`のキーは、生成されたリクエスト型のフィールド名と一致させ、`errors[].field`を`setError`のフィールド名としてそのまま使用できるようにする。
 
 ---
 
@@ -197,6 +197,7 @@ Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへco
 
 - 各コンポーネントファイルで定義した各Storyが`storybook build`と、`@storybook/addon-vitest`によるVitestテスト実行（`vitest --project=storybook`）で成功すること
 - `@storybook/addon-a11y`のaxe検査が全Storyで違反なしであること
+- レスポンシブ表示はコンポーネントごとのStory状態として`Mobile`や`Tablet`を追加しない。各Storyは状態だけを表し、レスポンシブ確認が必要なStoryを[`design-tokens.md`](./design-tokens.md) §6で定義した390px・768px・1440pxのviewportで検証すること
 - キーボードのみでの入力・色選択・画像種類選択・言語切替・送信（ui.md §15）
 - スクリーンリーダーでのエラーメッセージ関連付け
 - 言語切り替え時に全表示文言（label、button、エラーメッセージ）が追従すること
@@ -216,11 +217,13 @@ E2E（Playwright）もSmall/Medium/Largeのいずれかへ、実際の依存範�
 
 ## CI実行スケジュール
 
-| イベント                     | 実行するSmall/Medium/Large |
-| ---------------------------- | -------------------------- |
-| push (main)                  | Small                      |
-| pull_request                 | Small, Medium              |
-| schedule / workflow_dispatch | Small, Medium, Large       |
+| サイズ | 実行イベント                                                       |
+| ------ | ------------------------------------------------------------------ |
+| Small  | push、pull_request、nightly（schedule）、workflow_dispatch         |
+| Medium | pull_request、nightly（schedule）、workflow_dispatch               |
+| Large  | nightly（schedule）、workflow_dispatch                             |
+
+Smallはpushから、MediumはPull Requestから、Largeはnightlyまたは手動実行から対象に加える。各段階では、その段階までに対象となったサイズを累積して実行する。
 
 E2E専用の実行頻度ルールは設けない。個々のE2Eテストは、そのテストが分類されたサイズに応じたイベントで実行される。
 

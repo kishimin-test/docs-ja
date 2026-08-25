@@ -84,11 +84,11 @@ ImageGenerationRequest
 
 `ImageType` とGlyph Forge APIのエンドポイントの対応は次のとおりとする。
 
-| `ImageType` | Method | Path |
-| --- | --- | --- |
-| `standard` | `POST` | `/images` |
+| `ImageType`    | Method | Path                 |
+| -------------- | ------ | -------------------- |
+| `standard`     | `POST` | `/images`            |
 | `x-background` | `POST` | `/images/background` |
-| `x-icon` | `POST` | `/images/x-icon` |
+| `x-icon`       | `POST` | `/images/x-icon`     |
 
 この対応表はAdapterのInfrastructure実装に閉じ込める。
 
@@ -144,13 +144,13 @@ Glyph Forge APIが画像生成失敗を示す場合は `FAILED` に変換する�
 
 Adapterは外部APIの失敗を `ImageGenerationPortError` へ変換する。
 
-| 外部で発生した事象 | Portエラー |
-| --- | --- |
-| レート制限 | `RATE_LIMITED` |
-| タイムアウト | `TIMEOUT` |
-| DNS、接続、TLS、HTTPクライアントの通信失敗 | `UNAVAILABLE` |
-| 画像として解釈できない応答 | `INVALID_RESPONSE` |
-| Glyph Forge APIの生成失敗 | `FAILED` |
+| 外部で発生した事象                         | Portエラー         |
+| ------------------------------------------ | ------------------ |
+| レート制限                                 | `RATE_LIMITED`     |
+| タイムアウト                               | `TIMEOUT`          |
+| DNS、接続、TLS、HTTPクライアントの通信失敗 | `UNAVAILABLE`      |
+| 画像として解釈できない応答                 | `INVALID_RESPONSE` |
+| Glyph Forge APIの生成失敗                  | `FAILED`           |
 
 ## 12. タイムアウトとキャンセル
 
@@ -204,13 +204,13 @@ Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のと�
 
 ### リクエスト
 
-| mojicaの値 | Glyph Forge APIのフィールド | 変換 |
-| --- | --- | --- |
-| `text` | `frame_text` | 文字列をそのまま渡す |
-| `foregroundCharacter` | `inner_text` | 文字列をそのまま渡す |
-| `backgroundCharacter` | `outer_text` | 文字列をそのまま渡す |
-| `foregroundColor` | `inner_color` | `RgbColor` を `[R, G, B]` へ変換 |
-| `backgroundColor` | `outer_color` | `RgbColor` を `[R, G, B]` へ変換 |
+| mojicaの値            | Glyph Forge APIのフィールド | 変換                             |
+| --------------------- | --------------------------- | -------------------------------- |
+| `text`                | `frame_text`                | 文字列をそのまま渡す             |
+| `foregroundCharacter` | `inner_text`                | 文字列をそのまま渡す             |
+| `backgroundCharacter` | `outer_text`                | 文字列をそのまま渡す             |
+| `foregroundColor`     | `inner_color`               | `RgbColor` を `[R, G, B]` へ変換 |
+| `backgroundColor`     | `outer_color`               | `RgbColor` を `[R, G, B]` へ変換 |
 
 送信するJSONは次の形式とする。
 
@@ -230,11 +230,11 @@ Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のと�
 
 ### エンドポイント
 
-| `ImageType` | Method | Path |
-| --- | --- | --- |
-| `standard` | `POST` | `/images` |
+| `ImageType`    | Method | Path                 |
+| -------------- | ------ | -------------------- |
+| `standard`     | `POST` | `/images`            |
 | `x-background` | `POST` | `/images/background` |
-| `x-icon` | `POST` | `/images/x-icon` |
+| `x-icon`       | `POST` | `/images/x-icon`     |
 
 ### 成功レスポンス
 
@@ -245,12 +245,12 @@ Glyph Forge APIの実装に基づき、Adapterの外部通信契約を次のと�
 
 ### エラーレスポンス
 
-| Glyph Forge APIの応答 | Adapterの扱い |
-| --- | --- |
-| `422 Unprocessable Entity` | `FAILED` |
-| `429 Too Many Requests` | `RATE_LIMITED` |
-| `503 Service Unavailable` | `UNAVAILABLE` |
-| その他の5xx | `FAILED` |
+| Glyph Forge APIの応答         | Adapterの扱い      |
+| ----------------------------- | ------------------ |
+| `422 Unprocessable Entity`    | `FAILED`           |
+| `429 Too Many Requests`       | `RATE_LIMITED`     |
+| `503 Service Unavailable`     | `UNAVAILABLE`      |
+| その他の5xx                   | `FAILED`           |
 | 画像として解釈できない2xx応答 | `INVALID_RESPONSE` |
 
 `429` と `503` の `Retry-After` は、整数秒として `retryAfter` に設定する。Glyph Forge APIはレート制限時にクライアント単位で3件のバーストと毎分10件の補充を行い、容量不足時には `503` と `Retry-After: 1` を返す。

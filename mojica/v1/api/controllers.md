@@ -37,10 +37,10 @@ Controllerは `ImageGenerationService` の契約を利用して画像生成を�
 
 ### Headers
 
-| ヘッダー | 必須 | Controllerでの扱い |
-| --- | :---: | --- |
-| `Content-Type` | ○ | `application/json` として解析する |
-| `Accept-Language` | - | エラーメッセージの言語を決定する |
+| ヘッダー          | 必須 | Controllerでの扱い                |
+| ----------------- | :--: | --------------------------------- |
+| `Content-Type`    |  ○   | `application/json` として解析する |
+| `Accept-Language` |  -   | エラーメッセージの言語を決定する  |
 
 `Accept-Language` では `ja` と `en` をサポートする。未指定または未対応の値の場合は `ja` を使用する。
 
@@ -48,14 +48,14 @@ Controllerは `ImageGenerationService` の契約を利用して画像生成を�
 
 Controllerは次のHTTP DTOを受け取る。
 
-| 属性 | 型 | 必須 |
-| --- | --- | :---: |
-| `type` | string | ○ |
-| `text` | string | ○ |
-| `foregroundCharacter` | string | ○ |
-| `foregroundColor` | string | ○ |
-| `backgroundCharacter` | string | ○ |
-| `backgroundColor` | string | ○ |
+| 属性                  | 型     | 必須 |
+| --------------------- | ------ | :--: |
+| `type`                | string |  ○   |
+| `text`                | string |  ○   |
+| `foregroundCharacter` | string |  ○   |
+| `foregroundColor`     | string |  ○   |
+| `backgroundCharacter` | string |  ○   |
+| `backgroundColor`     | string |  ○   |
 
 HTTP DTOはDomain Modelと同一の型として扱わない。Controllerまたは入力Mapperが各値をDomain Modelへ変換する。
 
@@ -119,14 +119,14 @@ JSONとして解析できるが、Domain Modelを生成できない場合に返�
 
 ControllerはServiceから返された結果を次のHTTPレスポンスへ変換する。
 
-| Service結果 | HTTPステータス | 公開APIコード |
-| --- | --- | --- |
-| 成功 | `200 OK` | なし。画像を返す |
-| `RATE_LIMITED` | `429 Too Many Requests` | `RATE_LIMIT_EXCEEDED` |
-| `TIMEOUT` | `504 Gateway Timeout` | `IMAGE_GENERATION_TIMEOUT` |
-| `UNAVAILABLE` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
-| `INVALID_RESPONSE` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
-| `FAILED` | `502 Bad Gateway` | `IMAGE_GENERATION_FAILED` |
+| Service結果        | HTTPステータス          | 公開APIコード              |
+| ------------------ | ----------------------- | -------------------------- |
+| 成功               | `200 OK`                | なし。画像を返す           |
+| `RATE_LIMITED`     | `429 Too Many Requests` | `RATE_LIMIT_EXCEEDED`      |
+| `TIMEOUT`          | `504 Gateway Timeout`   | `IMAGE_GENERATION_TIMEOUT` |
+| `UNAVAILABLE`      | `502 Bad Gateway`       | `IMAGE_GENERATION_FAILED`  |
+| `INVALID_RESPONSE` | `502 Bad Gateway`       | `IMAGE_GENERATION_FAILED`  |
+| `FAILED`           | `502 Bad Gateway`       | `IMAGE_GENERATION_FAILED`  |
 
 `retryAfter` が結果に含まれる場合、Controllerは `Retry-After` ヘッダーへ変換する。
 
@@ -134,11 +134,11 @@ ControllerはServiceから返された結果を次のHTTPレスポンスへ変�
 
 画像生成に成功した場合は、次のレスポンスを返す。
 
-| 項目 | 値 |
-| --- | --- |
-| Status | `200 OK` |
-| Content-Type | `image/png` |
-| Body | `GeneratedImage.content` |
+| 項目                | 値                                        |
+| ------------------- | ----------------------------------------- |
+| Status              | `200 OK`                                  |
+| Content-Type        | `image/png`                               |
+| Body                | `GeneratedImage.content`                  |
 | Content-Disposition | `attachment` と `GeneratedImage.fileName` |
 
 `GeneratedImage.fileName` はServiceが生成した値を使用する。Controllerはファイル名を再生成したり、ユーザー入力値から組み立てたりしない。
@@ -150,11 +150,11 @@ Controllerは公開API用の日本語・英語メッセージを解決する。
 ### 言語決定
 
 | `Accept-Language` | 使用言語 |
-| --- | --- |
-| `ja` | 日本語 |
-| `en` | 英語 |
-| 未指定 | 日本語 |
-| 未対応の値 | 日本語 |
+| ----------------- | -------- |
+| `ja`              | 日本語   |
+| `en`              | 英語     |
+| 未指定            | 日本語   |
+| 未対応の値        | 日本語   |
 
 エラーメッセージに次の情報を含めない。
 

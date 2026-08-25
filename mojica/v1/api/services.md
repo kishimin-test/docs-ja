@@ -76,11 +76,11 @@ mojica-x-icon-550e8400-e29b-41d4-a716-446655440000.png
 
 Portが成功した場合、Serviceは次の値を持つ `GeneratedImage` を返す。
 
-| 属性 | 設定元 |
-| --- | --- |
-| `content` | `ImageGenerationPort` の成功結果 |
-| `mediaType` | `ImageGenerationPort` の成功結果 |
-| `fileName` | Serviceが生成した `mojica-{imageType}-{UUID}.png` |
+| 属性        | 設定元                                            |
+| ----------- | ------------------------------------------------- |
+| `content`   | `ImageGenerationPort` の成功結果                  |
+| `mediaType` | `ImageGenerationPort` の成功結果                  |
+| `fileName`  | Serviceが生成した `mojica-{imageType}-{UUID}.png` |
 
 生成結果は呼び出し元へ返して処理を終了する。
 

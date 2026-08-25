@@ -5,7 +5,7 @@
 - 実装基盤: shadcn/ui `Alert`/`AlertTitle`/`AlertDescription` + Lucide `AlertCircle`
 - 責務: `role="alert"`のバナー。フィールドに紐づかないエラー表示に使用
 
-特定の入力フィールドに紐づかないエラーを画面上部にバナー表示するための共通UIコンポーネント。見出しと説明文を受け取り、それぞれを`AlertTitle`と`AlertDescription`へ描画する。APIのステータスコードや翻訳文言は知らず、実際の表示内容は[ApiErrorBanner](./ApiErrorBanner.md)が決定する。
+特定の入力フィールドに紐づかないエラーを画面上部にバナー表示するための共通UIコンポーネント。見出しと説明文を受け取り、それぞれを`AlertTitle`と`AlertDescription`へ描画する。APIのステータスコード、エラーコード、翻訳文言は知らず、実際の表示内容は呼び出し側が決定する。
 
 ## Props
 
