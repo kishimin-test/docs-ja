@@ -13,8 +13,6 @@
 | ---------------------------- | ----------------------------------------------------------------- |
 | Default（ja）／Default（en） | i18n Providerを`decorators`で注入し、ロケールごとの表示文言を確認 |
 
-レスポンシブ表示はStory状態として`Mobile`や`Tablet`を追加せず、Default Storyを390px・768px・1440pxのviewportで検証する。
-
 ## テスト
 
 - サイズ: Small

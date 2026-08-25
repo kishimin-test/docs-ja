@@ -15,8 +15,6 @@
 
 `POST /images`はMSWの`http.post`でモックし、実APIへ接続しない。
 
-レスポンシブ表示はStory状態として`Mobile`や`Tablet`を追加せず、必要なStoryを390px・768px・1440pxのviewportで検証する。
-
 ## テスト
 
 - サイズ: Small

@@ -197,6 +197,7 @@ Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへco
 
 - 各コンポーネントファイルで定義した各Storyが`storybook build`と、`@storybook/addon-vitest`によるVitestテスト実行（`vitest --project=storybook`）で成功すること
 - `@storybook/addon-a11y`のaxe検査が全Storyで違反なしであること
+- レスポンシブ表示はコンポーネントごとのStory状態として`Mobile`や`Tablet`を追加しない。各Storyは状態だけを表し、レスポンシブ確認が必要なStoryを[`design-tokens.md`](./design-tokens.md) §6で定義した390px・768px・1440pxのviewportで検証すること
 - キーボードのみでの入力・色選択・画像種類選択・言語切替・送信（ui.md §15）
 - スクリーンリーダーでのエラーメッセージ関連付け
 - 言語切り替え時に全表示文言（label、button、エラーメッセージ）が追従すること
