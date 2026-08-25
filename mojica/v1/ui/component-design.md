@@ -172,7 +172,7 @@ Storybookの`*.stories.tsx`は実装ファイルと同じディレクトリへco
 # 4. i18n・アクセシビリティ・レスポンシブへの影響
 
 - **i18n**: すべての表示文言（label、button、select選択肢、クライアントバリデーションメッセージ）は翻訳関数経由で描画する。APIのエラーメッセージは`Accept-Language`に応じてサーバー側でローカライズ済みのため、`code`/`errors[].field`のみをUI側の判定に使用し、`message`はそのまま表示する（ui.md §13）。
-- **アクセシビリティ**: `aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ロゴの`alt`、装飾アイコンへの`aria-hidden="true"`を個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
+- **アクセシビリティ**: `aria-describedby`による[`TextField`](./components/TextField.md)/[`ColorPickerField`](./components/ColorPickerField.md)/`Select`と[`FieldError`](./components/FieldError.md)の関連付け、ワードマークと重複するロゴ画像の空`alt`、装飾アイコンへの`aria-hidden="true"`を個別に実装する。[`AlertBanner`](./components/AlertBanner.md)は`role="alert"`とする。[`GenerateButton`](./components/GenerateButton.md)は`aria-busy`と表示文言（「生成中...」）の両方で状態を伝える（ui.md §14）。
 - **レスポンシブ**: フォームは1カラムを基本とし、最大幅設定と中央配置は[`ImageGenerationScreen`](./components/ImageGenerationScreen.md)（ページコンテナ）が担当する。各共通UIコンポーネントは`w-full`を基本とし、横スクロールが発生しないようにする（ui.md §14）。
 
 ---

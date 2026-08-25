@@ -25,7 +25,7 @@ Figma上の色・数値は各フレームの塗り（fill）・線（stroke）�
 | `border-accent`          | `#BEDEEB` | `oklch(0.881 0.038 224.3)` | outline-variant              | 入力欄・カラーピッカーの枠線（`Input / Empty`、`Select`）                                  |
 | `primary`                | `#7CC7E8` | `oklch(0.793 0.088 227.9)` | `primary`（既定）            | 画像生成ボタンの背景（通常時）                                                             |
 | `primary-foreground`     | `#193A48` | `oklch(0.330 0.046 228.2)` | `primary-foreground`（既定） | 画像生成ボタンのテキスト色（通常時）                                                       |
-| `inverse`                | `#211F1C` | `oklch(0.240 0.006 78.2)`  | 独自追加                     | ロゴのシンボル背景、Retryableバリアントのボタン背景、404の「トップページへ戻る」ボタン背景 |
+| `inverse`                | `#211F1C` | `oklch(0.240 0.006 78.2)`  | 独自追加                     | Retryableバリアントのボタン背景、404の「トップページへ戻る」ボタン背景 |
 | `inverse-foreground`     | `#FFFFFF` | `oklch(1.000 0.000 0)`     | 独自追加                     | `inverse`背景上のテキスト色                                                                |
 | `destructive`            | `#C72929` | `oklch(0.541 0.194 26.7)`  | `destructive`（既定）        | クライアントバリデーションエラーの枠線・エラーメッセージ文字色                             |
 | `destructive-background` | `#FFF2F2` | `oklch(0.971 0.014 17.4)`  | 独自追加                     | APIエラー表示に使用する`AlertBanner`の背景                                                 |
@@ -49,7 +49,6 @@ Figma上の色・数値は各フレームの塗り（fill）・線（stroke）�
 | `text-base`      | 15px   | Regular 400 / Semi Bold 600 | カラーコード・Selectの表示値（400）、「トップページへ戻る」ボタン（600） |
 | `text-md`        | 16px   | Semi Bold 600               | 画像生成ボタンの文言                                                     |
 | `text-lg`        | 18px   | Semi Bold 600               | Selectの展開シェブロン                                                   |
-| `text-xl`        | 19px   | Bold 700                    | ロゴのシンボル文字「M」                                                  |
 | `text-2xl`       | 22px   | Bold 700                    | ロゴのワードマーク「mojica」                                             |
 | `text-3xl`       | 24px   | Bold 700                    | Introの見出し（Mobile）                                                  |
 | `text-4xl`       | 26px   | Bold 700                    | 404画面の「ページが見つかりません」                                      |
@@ -68,7 +67,7 @@ Material Design 3のコンポーネント形状に合わせ、Figma実測値を�
 | ------------------ | ---- | ---------------------------------------------- | ----------------------------------------------------------------- |
 | `radius-sm`        | 8px  | 小さなコンテナ・スウォッチ                     | カラーピッカーの色見本（スウォッチ）                              |
 | `radius-md`        | 10px | テキストフィールド・アウトライン系コントロール | 入力欄・Select・言語切り替え・カラーピッカー・APIエラーバナーの枠 |
-| `radius-lg`        | 12px | ボタン・主要アクション                         | ロゴのシンボル、画像生成ボタン、404「トップページへ戻る」ボタン   |
+| `radius-lg`        | 12px | ボタン・主要アクション                         | 画像生成ボタン、404「トップページへ戻る」ボタン                   |
 | `radius-xl`        | 18px | カード・大きなコンテナ                         | フォームカード                                                    |
 
 ---
@@ -206,7 +205,7 @@ Material 3の役割名を正とし、既存コンポーネントの移行期間�
 | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------- |
 | [Layout](./components/Layout.md)（ページ全体）                                                                                                     | `background`                                                    | -                                            | -                                                     |
 | [AppHeader](./components/AppHeader.md)・[AppFooter](./components/AppFooter.md)・[ImageGenerationForm](./components/ImageGenerationForm.md)のカード | `surface`                                                       | `radius-xl`（カードのみ）                    | -                                                     |
-| [Logo](./components/Logo.md)                                                                                                                       | `inverse` / `inverse-foreground`                                | `radius-lg`（シンボル）                      | `text-xl`（シンボル文字）／`text-2xl`（ワードマーク） |
+| [Logo](./components/Logo.md)                                                                                                                       | -                                                              | -                                           | `text-2xl`（ワードマーク）                          |
 | [TextField](./components/TextField.md)                                                                                                             | `border` / `border-accent`                                      | `radius-md`                                  | `text-sm`（ラベル）／`text-xs`（ヒント）              |
 | [ColorPickerField](./components/ColorPickerField.md)                                                                                               | `border-accent`                                                 | `radius-md`（欄）／`radius-sm`（スウォッチ） | `text-base`（HEX値）                                  |
 | [LanguageSwitcher](./components/LanguageSwitcher.md)                                                                                               | `border`                                                        | `radius-md`                                  | `text-xs-medium`                                      |
