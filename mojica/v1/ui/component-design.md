@@ -91,14 +91,13 @@ src/
 │   │   │   │   ├── ImageTypeSelect.tsx
 │   │   │   │   ├── ImageTypeSelect.stories.tsx
 │   │   │   │   └── ImageTypeSelect.small.test.tsx
-│   │   │   ├── GenerateButton/                # 共通Button（ui/button）+ lucide-reactのLoader2
+│   │   │   └── GenerateButton/                # 共通Button（ui/button）+ lucide-reactのLoader2
 │   │   │   │   ├── GenerateButton.tsx
 │   │   │   │   ├── GenerateButton.stories.tsx
 │   │   │   │   └── GenerateButton.small.test.tsx
-│   │   │   └── ApiErrorBanner/
-│   │   │       ├── ApiErrorBanner.tsx
-│   │   │       ├── ApiErrorBanner.stories.tsx
-│   │   │       └── ApiErrorBanner.small.test.tsx
+│   │   ├── errors/
+│   │   │   ├── toImageGenerationErrorPresentation.ts      # APIのcodeを表示用の見出しへ変換
+│   │   │   └── toImageGenerationErrorPresentation.small.test.ts
 │   │   ├── hooks/
 │   │   │   ├── useImageGenerationForm.ts   # Reactのフォーム状態とZodによる入力値・クライアントバリデーション
 │   │   │   └── useImageGenerationForm.small.test.ts
