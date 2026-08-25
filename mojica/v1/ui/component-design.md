@@ -100,7 +100,9 @@ src/
 │   │   │   └── toImageGenerationErrorPresentation.small.test.ts
 │   │   ├── hooks/
 │   │   │   ├── useImageGenerationForm.ts   # Reactのフォーム状態とZodによる入力値・クライアントバリデーション
-│   │   │   └── useImageGenerationForm.small.test.ts
+│   │   │   ├── useImageGenerationForm.small.test.ts
+│   │   │   ├── useRetryAfterCountdown.ts   # Retry-Afterを起点とする残り秒数とタイマー同期
+│   │   │   └── useRetryAfterCountdown.small.test.ts
 │   │   ├── schemas/
 │   │   │   ├── imageGenerationSchema.ts    # Zodスキーマによる入力値検証
 │   │   │   └── imageGenerationSchema.small.test.ts

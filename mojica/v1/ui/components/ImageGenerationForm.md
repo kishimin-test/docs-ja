@@ -22,9 +22,9 @@ type ImageGenerationFormProps = {
 - クライアントバリデーション（ui.md §11）は`imageGenerationSchema.ts`のZodスキーマとして定義し、`useForm({ resolver: zodResolver(imageGenerationSchema) })`で接続する。`handleSubmit`はバリデーションを通過した場合のみ`onSubmit`を呼び出し、送信をブロックする責務を自前実装しない。
 - `handleSubmit`の`onSubmit`から、Orval生成のミューテーションフック（`mutate`/`mutateAsync`）を呼び出す。`422 Unprocessable Entity`は生成フックの`onError`コールバックで受け取り、`errors[].field`をキーとしてReact Hook Formの`setError(field, { type: "server", message })`で同じフィールドへ反映する。フロントエンドのバリデーションを通過していてもAPI側の結果を最終的な正とする（ui.md §11 API側のバリデーションエラー）。
 - `400`/`429`/`500`/`502`/`504`は生成フックの`isError`/`error`からAPIの言語非依存な`code`を読み取り、`toImageGenerationErrorPresentation`でui.md §12の見出しへ変換する。変換した見出しとAPIレスポンスのローカライズ済み`message`を[AlertBanner](./AlertBanner.md)へ直接渡し、内部エラー情報は表示しない。HTTPステータスコードは表示分岐に使用しない。
-- `429`のレスポンスに`Retry-After`ヘッダーが含まれる場合、その秒数を[GenerateButton](./GenerateButton.md)の`retryAfterSeconds`propへ渡し、カウントダウン表示・`disabled`を制御する（ui.md §12「429のRetry-After」）。
+- `429`のレスポンスに`Retry-After`ヘッダーが含まれる場合、その秒数を`useRetryAfterCountdown`へ渡す。残り秒数が1以上なら[GenerateButton](./GenerateButton.md)へ`{ kind: "cooldown", remainingSeconds }`、0になった後は`{ kind: "retryable" }`を渡す（ui.md §12「429のRetry-After」）。ヘッダーがないAPIエラーでは直ちに`retryable`を渡す。
 - 生成成功時は`onSuccess`コールバックでレスポンスのPNGを`Content-Disposition`の`filename`を使って自動ダウンロードする（ui.md §10の通りプレビューは保持しない）。
-- 送信中は生成フックの`isPending`（および`formState.isSubmitting`）を用いて[GenerateButton](./GenerateButton.md)を`disabled`にし、多重リクエストを防止する（ui.md §9）。
+- 送信中は生成フックの`isPending`（および`formState.isSubmitting`）から[GenerateButton](./GenerateButton.md)へ`{ kind: "submitting" }`を渡し、多重リクエストを防止する（ui.md §9）。送信中、クールダウン、再試行可能、通常の優先順位は`ImageGenerationForm`で一度だけ決定し、Button内へ状態遷移を重複させない。
 
 ## バリデーションスキーマ（Zod）
 
@@ -78,6 +78,7 @@ export type ImageGenerationFormValues = z.infer<typeof imageGenerationSchema>;
 | ------ | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Small  | `imageGenerationSchema.ts`  | ui.md §11の各制約（必須・文字数上限・空白文字のみ禁止・制御文字禁止・文字の組み合わせ）を網羅                                                                                                                                                                                                             |
 | Small  | `useImageGenerationForm.ts` | resolver配線・defaultValuesの確認                                                                                                                                                                                                                                                                         |
+| Small  | `useRetryAfterCountdown.ts` | 初期秒数、1秒ごとの減算、0での停止、入力値変更時の再開始、unmount時のタイマー破棄をフェイクタイマーで確認                                                                                                                                                                                               |
 | Small  | `toImageGenerationErrorPresentation.ts` | APIの各`code`をui.md §12の見出しへ変換し、未対応の`code`をfallbackへ分類すること                                                                                                                                                                                                                           |
 | Medium | `ImageGenerationForm.tsx`   | MSWで`POST /images`をモックし（Orval生成ミューテーションフックが内部で行うAxiosリクエストをインターセプトする）、入力→送信→成功／422（`errors[].field`の`setError`反映）／400・429・500・502・504（`AlertBanner`表示）の一連を`userEvent`で検証する、この機能の中心的な統合テスト                       |
 
