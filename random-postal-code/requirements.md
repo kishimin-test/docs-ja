@@ -20,6 +20,7 @@
 | Android アプリ表示名     | Zipnami               |
 | Google Play ストア掲載名 | Zipnami               |
 | リポジトリ名             | `random-postal-code`  |
+| Cloudflare Pages 名      | `zipnami`             |
 | Cloudflare Worker 名     | `random-postal-code`  |
 | Android パッケージ名     | `jp.kishimin.zipnami` |
 
@@ -258,17 +259,19 @@ Web / Worker
 
 ### 6.3 Cloudflare
 
-Web は Cloudflare Workers 上で提供する。
+React SPA は Cloudflare Pages、Hono API は Cloudflare Workers 上で提供する。
 
-React SPA の静的アセットと Hono API を同一 Worker プロジェクトで扱う。
+React と Hono は別の Cloudflare プロジェクトとして、独立してビルド・デプロイする。
 
-Cloudflare Workers の Vite 統合には以下を使用する。
+React は Vite で静的ビルドし、生成した `dist` を Cloudflare Pages から配信する。
 
-```text
-@cloudflare/vite-plugin
-```
+Hono は Cloudflare Worker としてデプロイする。
 
-独自の Web ビルド処理は作らず、Vite と Cloudflare Vite Plugin を利用する。
+React はビルド時環境変数 `VITE_API_BASE_URL` から Hono API の公開 URL を取得する。
+
+Hono API は許可された Cloudflare Pages の Origin に対してのみ CORS レスポンスヘッダーを返す。
+
+Android からのアクセスはブラウザ CORS の対象外だが、React と同じ公開 API 契約を利用する。
 
 ### 6.4 Web 構成
 
@@ -276,18 +279,18 @@ Cloudflare Workers の Vite 統合には以下を使用する。
 Browser
    │
    ▼
+Cloudflare Pages
+   │ React SPA
+   │ HTTPS / CORS
+   ▼
 Cloudflare Workers
-   │
-   ├── React SPA / Static Assets
-   │
-   └── Hono API
-          │
-          └── 正規化済み郵便番号データ
+   │ Hono API
+   └── 正規化済み郵便番号データ
 ```
 
-React と Hono を別サービスとしてデプロイしない。
+React と Hono は別サービスとしてデプロイする。
 
-MVP では1つの Cloudflare Worker としてデプロイする。
+MVP では Cloudflare Pages プロジェクトと Cloudflare Worker を1つずつ使用する。
 
 ### 6.5 API
 
@@ -342,16 +345,19 @@ random-postal-code/
 ├── apps/
 │   ├── web/
 │   │   ├── src/
-│   │   │   ├── worker/
-│   │   │   │   └── index.ts
-│   │   │   └── react-app/
-│   │   │       ├── components/
-│   │   │       ├── hooks/
-│   │   │       ├── lib/
-│   │   │       ├── App.tsx
-│   │   │       └── main.tsx
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── lib/
+│   │   │   ├── App.tsx
+│   │   │   └── main.tsx
 │   │   ├── index.html
 │   │   ├── vite.config.ts
+│   │   ├── tsconfig.json
+│   │   └── package.json
+│   │
+│   ├── api/
+│   │   ├── src/
+│   │   │   └── index.ts
 │   │   ├── wrangler.jsonc
 │   │   ├── tsconfig.json
 │   │   └── package.json
@@ -383,12 +389,12 @@ Vite の生成物ディレクトリをソース構成として管理しない。
 
 `dist/client` などを手動で責務分割する設計は採用しない。
 
-### 7.2 Worker Entry
+### 7.2 Hono Worker Entry
 
 Hono の Worker エントリは以下とする。
 
 ```text
-apps/web/src/worker/index.ts
+apps/api/src/index.ts
 ```
 
 ### 7.3 React
@@ -396,7 +402,7 @@ apps/web/src/worker/index.ts
 React アプリケーションは以下に配置する。
 
 ```text
-apps/web/src/react-app/
+apps/web/src/
 ```
 
 ### 7.4 Shared Package
@@ -437,9 +443,13 @@ Bun は以下の用途で使用する。
 
 ### 8.3 Web Development
 
-開発サーバーは Vite + Cloudflare Vite Plugin を使用する。
+React の開発サーバーには Vite を使用する。
 
-Cloudflare Workers の実行環境を考慮したローカル開発を行う。
+Hono API は Wrangler のローカル開発環境で実行する。
+
+React のローカル開発環境には、ローカル Hono API の URL を `VITE_API_BASE_URL` として設定する。
+
+開発用 Hono API の CORS allowlist には、Vite 開発サーバーの Origin のみを追加する。
 
 ---
 
@@ -979,6 +989,18 @@ API キーを無制限の状態で本番利用しない。
 
 広告 SDK が取得した広告識別子を Zipnami の API へ送信しない。
 
+### 18.3 CORS
+
+Hono API はブラウザからのアクセスに対して CORS allowlist を適用する。
+
+本番環境では Cloudflare Pages の公開 Origin と、明示的に管理された独自ドメインのみを許可する。
+
+`Access-Control-Allow-Origin: *` は使用しない。
+
+許可する method と request header は `GET /api/random` に必要な範囲へ限定する。
+
+Origin の部分一致や前方一致を使用せず、scheme・host・port を含む完全な Origin で照合する。
+
 ---
 
 ## 19. テスト
@@ -1081,15 +1103,23 @@ GET /api/random
 
 ## 20. CI/CD
 
-### 20.1 Web
+### 20.1 Web Frontend
 
-Cloudflare Workers へデプロイする。
+Vite で生成した静的アセットを Cloudflare Pages へデプロイする。
 
-Vite + Cloudflare Vite Plugin を前提としたビルド構成とする。
+Pages のビルド時に、本番 Hono API の URL を `VITE_API_BASE_URL` として設定する。
 
 本番デプロイに必要な Maps API キー等の環境設定が存在することを確認する。
 
-### 20.2 Android
+### 20.2 Web API
+
+Hono API を Cloudflare Workers へデプロイする。
+
+本番 CORS allowlist には Cloudflare Pages の公開 Origin のみを設定する。
+
+Frontend と API は独立してデプロイおよびロールバックできるようにする。
+
+### 20.3 Android
 
 EAS Build を使用する。
 
@@ -1097,7 +1127,7 @@ production build では AAB を生成する。
 
 広告設定等は development / production で分離する。
 
-### 20.3 CI
+### 20.4 CI
 
 最低限以下を実行する。
 
@@ -1144,13 +1174,18 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 
 - React
 - Vite
-- `@cloudflare/vite-plugin`
+- Cloudflare Pages
+- Pages の SPA fallback
+- `VITE_API_BASE_URL`
+
+### M3 — API 基盤
+
 - Cloudflare Workers
 - Hono
-- Static Assets
+- CORS allowlist
 - ローカル開発環境
 
-### M3 — Web MVP
+### M4 — Web MVP
 
 - Zipnami UI
 - ランダム生成
@@ -1163,7 +1198,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - エラー処理
 - レスポンシブ
 
-### M4 — Web 外部サービス
+### M5 — Web 外部サービス
 
 - Google Cloud プロジェクト設定
 - Billing 有効化
@@ -1176,16 +1211,19 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - Consent 対応
 - 広告失敗時処理
 
-### M5 — Web 公開
+### M6 — Web 公開
 
-- Cloudflare Workers デプロイ
+- Cloudflare Pages デプロイ
+- Cloudflare Workers API デプロイ
+- 本番 API URL 設定
+- 本番 CORS allowlist 設定
 - `/privacy`
 - 出典表記
 - 広告に関する開示
 - production 動作確認
 - Maps API キー制限確認
 
-### M6 — Mobile 基盤
+### M7 — Mobile 基盤
 
 - Expo
 - React Native
@@ -1193,7 +1231,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - monorepo 統合
 - API Client
 
-### M7 — Mobile MVP
+### M8 — Mobile MVP
 
 - Zipnami UI
 - ランダム生成
@@ -1207,7 +1245,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - バナー広告
 - Consent 対応
 
-### M8 — Android 品質確認
+### M9 — Android 品質確認
 
 - Android 実機確認
 - production build
@@ -1220,7 +1258,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - splash
 - レスポンシブ確認
 
-### M9 — Google Play 準備
+### M10 — Google Play 準備
 
 - `jp.kishimin.zipnami` 最終確認
 - ストア掲載情報
@@ -1232,7 +1270,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - 使用 SDK と Data Safety の整合確認
 - AAB
 
-### M10 — Google Play テスト
+### M11 — Google Play テスト
 
 - テスター確保
 - 必要なテストトラックで配布
@@ -1241,7 +1279,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - 広告動作確認
 - Consent 動作確認
 
-### M11 — Production
+### M12 — Production
 
 - Google Play 本番申請
 - 公開
@@ -1281,7 +1319,11 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - [ ] 必要な場合に Consent 処理を実行できる
 - [ ] Desktop / Tablet / Mobile で利用できる
 - [ ] エラー後に再試行できる
-- [ ] Cloudflare Workers で公開できる
+- [ ] React SPA を Cloudflare Pages で公開できる
+- [ ] Hono API を Cloudflare Workers で公開できる
+- [ ] Pages から本番 API URL を参照できる
+- [ ] 許可された Pages Origin から API を呼び出せる
+- [ ] 許可されていないブラウザ Origin に CORS アクセスを許可しない
 
 ### 22.2 Android
 
@@ -1318,9 +1360,11 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 ### 22.4 Architecture
 
 - [ ] React + TypeScript + Vite を使用する
-- [ ] `@cloudflare/vite-plugin` を使用する
+- [ ] React SPA を Cloudflare Pages で配信する
 - [ ] Hono を Cloudflare Worker 上で実行する
-- [ ] React Static Assets と Hono API を同一 Worker で提供する
+- [ ] React と Hono を独立してデプロイ・ロールバックできる
+- [ ] React は `VITE_API_BASE_URL` から API URL を取得する
+- [ ] Hono は設定された Pages Origin のみを CORS allowlist に含める
 - [ ] Web の独自バンドル処理を持たない
 - [ ] Web / Mobile / Shared を workspace monorepo で管理する
 - [ ] Expo の標準 monorepo サポートを利用する
@@ -1334,48 +1378,50 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 
 以下は MVP の確定事項とする。
 
-| 項目                   | 決定                                |
-| ---------------------- | ----------------------------------- |
-| プロダクト名           | Zipnami                             |
-| Web                    | React + TypeScript                  |
-| Web bundler            | Vite                                |
-| Cloudflare integration | `@cloudflare/vite-plugin`           |
-| API                    | Hono                                |
-| Hosting                | Cloudflare Workers                  |
-| Web 配信               | Workers Static Assets               |
-| Mobile                 | React Native + Expo + TypeScript    |
-| Mobile routing         | Expo Router                         |
-| Android build          | EAS Build                           |
-| Package manager        | Bun                                 |
-| Repository             | monorepo                            |
-| Workspace              | Bun workspaces                      |
-| 郵便番号データ         | 日本郵便公開データ                  |
-| データ正規化単位       | 一意な郵便番号                      |
-| 複数住所               | 重複除去後 `addresses` にすべて保持 |
-| ランダム抽選単位       | 一意な郵便番号                      |
-| 抽選確率               | 一意な郵便番号ごとに同一            |
-| 実行時住所データ取得   | 外部 API を使用しない               |
-| Web 地図               | Google Maps Embed API               |
-| Maps Billing           | 有効化必須                          |
-| Maps API key           | HTTP Referrer + Maps Embed API 制限 |
-| Maps key environment   | 本番 / 開発で分離                   |
-| Android 地図           | 外部地図アプリ / ブラウザ           |
-| Android Maps SDK       | 使用しない                          |
-| Web 履歴               | ブラウザ内・最大20件                |
-| Android 履歴           | 端末内・最大20件                    |
-| 履歴表示順             | 新しい順                            |
-| 履歴超過               | 最古から削除                        |
-| 重複履歴               | 保持する                            |
-| サーバー履歴           | 保存しない                          |
-| Web 広告               | Google AdSense                      |
-| Android 広告           | Google Mobile Ads SDK / AdMob       |
-| Android 広告形式       | バナーのみ                          |
-| 広告失敗時             | 主要機能を継続                      |
-| Consent                | 必要な地域では Google CMP / UMP     |
-| 広告識別子             | Zipnami サーバーへ保存しない        |
-| ユーザー認証           | なし                                |
-| 位置情報               | 取得しない                          |
-| Android package        | `jp.kishimin.zipnami`               |
+| 項目                    | 決定                                |
+| ----------------------- | ----------------------------------- |
+| プロダクト名            | Zipnami                             |
+| Web                     | React + TypeScript                  |
+| Web bundler             | Vite                                |
+| API                     | Hono                                |
+| Frontend hosting        | Cloudflare Pages                    |
+| API hosting             | Cloudflare Workers                  |
+| Frontend/API deployment | 別プロジェクト・独立デプロイ        |
+| API URL                 | `VITE_API_BASE_URL`                 |
+| Browser API access      | Pages Origin を許可する CORS        |
+| Mobile                  | React Native + Expo + TypeScript    |
+| Mobile routing          | Expo Router                         |
+| Android build           | EAS Build                           |
+| Package manager         | Bun                                 |
+| Repository              | monorepo                            |
+| Workspace               | Bun workspaces                      |
+| 郵便番号データ          | 日本郵便公開データ                  |
+| データ正規化単位        | 一意な郵便番号                      |
+| 複数住所                | 重複除去後 `addresses` にすべて保持 |
+| ランダム抽選単位        | 一意な郵便番号                      |
+| 抽選確率                | 一意な郵便番号ごとに同一            |
+| 実行時住所データ取得    | 外部 API を使用しない               |
+| Web 地図                | Google Maps Embed API               |
+| Maps Billing            | 有効化必須                          |
+| Maps API key            | HTTP Referrer + Maps Embed API 制限 |
+| Maps key environment    | 本番 / 開発で分離                   |
+| Android 地図            | 外部地図アプリ / ブラウザ           |
+| Android Maps SDK        | 使用しない                          |
+| Web 履歴                | ブラウザ内・最大20件                |
+| Android 履歴            | 端末内・最大20件                    |
+| 履歴表示順              | 新しい順                            |
+| 履歴超過                | 最古から削除                        |
+| 重複履歴                | 保持する                            |
+| サーバー履歴            | 保存しない                          |
+| Web 広告                | Google AdSense                      |
+| Android 広告            | Google Mobile Ads SDK / AdMob       |
+| Android 広告形式        | バナーのみ                          |
+| 広告失敗時              | 主要機能を継続                      |
+| Consent                 | 必要な地域では Google CMP / UMP     |
+| 広告識別子              | Zipnami サーバーへ保存しない        |
+| ユーザー認証            | なし                                |
+| 位置情報                | 取得しない                          |
+| Android package         | `jp.kishimin.zipnami`               |
 
 ---
 
@@ -1399,9 +1445,11 @@ Google Maps、Google AdSense、Google Mobile Ads SDK / AdMob、Google Play Data 
 
 実装時は各フレームワークの独自構成を作ることより、公式ツールチェーンと標準構成を優先する。
 
-Web は Cloudflare Workers の React + Vite 構成および Cloudflare Vite Plugin を基準とする。
+React SPA は Vite で静的ビルドし、Cloudflare Pages から配信する。
 
-Hono は Worker の API レイヤーとして使用する。
+Hono API は独立した Cloudflare Worker としてデプロイする。
+
+Frontend は `VITE_API_BASE_URL` で API の公開 URL を参照し、API は Pages の公開 Origin を CORS allowlist で許可する。
 
 Mobile は Expo の monorepo サポートと Expo Router の標準構成を基準とする。
 
