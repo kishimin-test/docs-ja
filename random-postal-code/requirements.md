@@ -290,8 +290,6 @@ Cloudflare Workers
 
 React と Hono は別サービスとしてデプロイする。
 
-MVP では Cloudflare Pages プロジェクトと Cloudflare Worker を1つずつ使用する。
-
 ### 6.5 API
 
 最低限以下を提供する。
@@ -344,23 +342,30 @@ workspace を使用した monorepo とする。
 random-postal-code/
 ├── apps/
 │   ├── web/
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── lib/
-│   │   │   ├── App.tsx
-│   │   │   └── main.tsx
-│   │   ├── index.html
-│   │   ├── vite.config.ts
-│   │   ├── tsconfig.json
-│   │   └── package.json
-│   │
-│   ├── api/
-│   │   ├── src/
-│   │   │   └── index.ts
-│   │   ├── wrangler.jsonc
-│   │   ├── tsconfig.json
-│   │   └── package.json
+│   │   ├── frontend/
+│   │   │   ├── src/
+│   │   │   │   ├── app/
+│   │   │   │   │   ├── providers/
+│   │   │   │   │   ├── routes/
+│   │   │   │   │   ├── views/
+│   │   │   │   │   └── App.tsx
+│   │   │   │   ├── api/
+│   │   │   │   ├── components/
+│   │   │   │   ├── features/
+│   │   │   │   ├── hooks/
+│   │   │   │   ├── lib/
+│   │   │   │   └── main.tsx
+│   │   │   ├── index.html
+│   │   │   ├── vite.config.ts
+│   │   │   ├── tsconfig.json
+│   │   │   └── package.json
+│   │   │
+│   │   └── backend/
+│   │       ├── src/
+│   │       │   └── index.ts
+│   │       ├── wrangler.jsonc
+│   │       ├── tsconfig.json
+│   │       └── package.json
 │   │
 │   └── mobile/
 │       ├── app/
@@ -394,7 +399,7 @@ Vite の生成物ディレクトリをソース構成として管理しない。
 Hono の Worker エントリは以下とする。
 
 ```text
-apps/api/src/index.ts
+apps/web/backend/src/index.ts
 ```
 
 ### 7.3 React
@@ -402,8 +407,12 @@ apps/api/src/index.ts
 React アプリケーションは以下に配置する。
 
 ```text
-apps/web/src/
+apps/web/frontend/src/
 ```
+
+アプリ全体の Provider、ルーティング、ページ単位の View は `apps/web/frontend/src/app/` に配置する。
+
+機能固有の UI と状態は `apps/web/frontend/src/features/<feature>/` に配置する。
 
 ### 7.4 Shared Package
 
@@ -426,7 +435,7 @@ React DOM や React Native に依存する UI コードは共有しない。
 
 Bun を使用する。
 
-ルート workspace で Web / Mobile / Shared package を管理する。
+ルート workspace で Web Frontend / Web Backend / Mobile / Shared package を管理する。
 
 ### 8.2 Web Build
 
@@ -1366,7 +1375,7 @@ Web と Mobile の変更範囲に応じて必要なジョブを実行する。
 - [ ] React は `VITE_API_BASE_URL` から API URL を取得する
 - [ ] Hono は設定された Pages Origin のみを CORS allowlist に含める
 - [ ] Web の独自バンドル処理を持たない
-- [ ] Web / Mobile / Shared を workspace monorepo で管理する
+- [ ] Web Frontend / Web Backend / Mobile / Shared を workspace monorepo で管理する
 - [ ] Expo の標準 monorepo サポートを利用する
 - [ ] 郵便番号データ取得のための実行時外部 API 依存を持たない
 - [ ] Android に郵便番号データ一式を内包しない
