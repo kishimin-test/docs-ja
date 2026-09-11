@@ -2,7 +2,7 @@
 
 ## 1. 文書の目的
 
-この文書は、Zipnami MVP の現在のプロダクト設計と技術契約の正本である。実装タスクと個別の受入条件は [GitHub Issues](https://github.com/kishimin/random-postal-code/issues) で管理し、ブランチの順序と完了条件は [branch-design.md](./branch-design.md) で管理する。
+この文書は、Zipnami MVP の現在のプロダクト設計と技術契約の正本である。実装タスクと個別の受入条件は [GitHub Issues](https://github.com/kishimin/random-postal-code/issues) で管理する。
 
 ## 2. プロダクト範囲
 
@@ -108,7 +108,7 @@ Accept: application/json
 }
 ```
 
-API は認証、履歴保存、検索、フィルター、書き込み操作を提供しない。データを読み込めない場合は成功レスポンスへ偽装せず、JSON のエラー応答を返す。詳細なエラー形式は共有契約を実装する Issue #2 で固定する。
+API は認証、履歴保存、検索、フィルター、書き込み操作を提供しない。データを読み込めない場合は成功レスポンスへ偽装せず、JSON のエラー応答を返す。[api-design.md](./api-design.md) が共有エラーenvelopeとstatus mappingを定義する。
 
 ### 5.2 CORS と設定
 
@@ -206,7 +206,7 @@ MVP は [tracker Issue #22](https://github.com/kishimin/random-postal-code/issue
 | 項目 | 所有Issue | 確定条件 |
 | --- | ---: | --- |
 | パッケージの正確なバージョンと品質コマンド | #1 | 公式ツールチェーンと互換性を確認し、lockfileとworkspace scriptsで固定する |
-| APIエラーのJSON形式 | #2 | クライアントが失敗種別を安全に判定できる共有契約とテストで固定する |
+| Runtime schema実装 | #2 | 共有コードをclientまたはserver frameworkへ結合せずAPI契約を実装する |
 | 郵便番号生成物のファイル形式 | #3 | 決定性、Workersのサイズ制約、読み込み失敗を検証して固定する |
 | WebとAndroidの履歴保存キー・移行方法 | #7, #14 | 既存データがない初版の最小契約と永続化テストで固定する |
 | 本番Pages Origin、Worker URL、プロジェクト名 | #19 | 実際に作成したCloudflareリソースとデプロイ設定で固定する |
