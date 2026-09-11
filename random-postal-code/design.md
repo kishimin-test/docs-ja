@@ -2,7 +2,7 @@
 
 ## 1. 文書の目的
 
-この文書は、Zipnami MVP の現在のプロダクト設計と技術契約の正本である。実装タスクと個別の受入条件は [GitHub Issues](https://github.com/kishimin/random-postal-code/issues) で管理する。
+この文書は、Zipnami MVP の現在のプロダクト設計と技術契約の正本である。実装タスクと個別の受入条件は [GitHub Issues](https://github.com/kishimin/random-postal-code/issues) で管理し、詳細な契約は [api-design.md](./api-design.md) と [ui-design.md](./ui-design.md) で管理する。
 
 ## 2. プロダクト範囲
 
